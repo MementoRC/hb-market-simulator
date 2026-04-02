@@ -19,6 +19,12 @@ class OrderType(Enum):
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     LIMIT_MAKER = "LIMIT_MAKER"
+    STOP_LOSS = "STOP_LOSS"
+    TAKE_PROFIT = "TAKE_PROFIT"
+    TRAILING_STOP = "TRAILING_STOP"
+
+    def is_conditional(self) -> bool:
+        return self in (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT, OrderType.TRAILING_STOP)
 
 
 class TradeType(Enum):
@@ -109,6 +115,13 @@ class InFlightOrder:
     last_update_timestamp: float = 0.0
     position_action: PositionAction = PositionAction.NIL
     exchange_order_id: str | None = None
+    trigger_price: Decimal | None = None
+    trail_amount: Decimal | None = None
+    watermark: Decimal | None = None
+
+    @property
+    def is_conditional(self) -> bool:
+        return self.order_type.is_conditional()
 
     @property
     def is_open(self) -> bool:
