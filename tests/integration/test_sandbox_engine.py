@@ -10,9 +10,10 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
-from market_simulator.core.types import OrderType as SimOrderType, TradeType as SimTradeType
+
+from market_simulator.core.types import OrderType as SimOrderType
 from market_simulator.hb_compat.sandbox_engine import SandboxConfig, SandboxEngine, SimulationResult
-from market_simulator.replay.data_loader import load_candles_csv, load_trades_csv
+from market_simulator.replay.data_loader import load_candles_csv
 from market_simulator.replay.replay_source import ReplayDataSource
 from market_simulator.simulator.exchange import SimulatedExchangeConfig
 from market_simulator.simulator.fee_model import FlatFeeModel, ZeroFeeModel
@@ -21,6 +22,7 @@ from market_simulator.simulator.matching_engine import ImmediateFillEngine, Limi
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def candles_csv(tmp_path) -> Path:
@@ -41,11 +43,13 @@ def basic_engine(candles_csv) -> SandboxEngine:
     """A basic engine with one exchange and candle data."""
     config = SandboxConfig(
         tick_interval=60.0,  # 1 minute ticks matching candle interval
-        exchanges=[SimulatedExchangeConfig(
-            name="sim_binance",
-            trading_pairs=["BTC-USDT"],
-            initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
-        )],
+        exchanges=[
+            SimulatedExchangeConfig(
+                name="sim_binance",
+                trading_pairs=["BTC-USDT"],
+                initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
+            )
+        ],
         matching_engine=ImmediateFillEngine(),
         fee_model=ZeroFeeModel(),
     )
@@ -64,6 +68,7 @@ def basic_engine(candles_csv) -> SandboxEngine:
 # ---------------------------------------------------------------------------
 # Basic engine lifecycle tests
 # ---------------------------------------------------------------------------
+
 
 class TestSandboxEngineLifecycle:
     def test_initialization(self, basic_engine):
@@ -95,6 +100,7 @@ class TestSandboxEngineLifecycle:
 # ---------------------------------------------------------------------------
 # Trading during simulation
 # ---------------------------------------------------------------------------
+
 
 class TestSandboxEngineTrading:
     def test_buy_on_tick(self, basic_engine):
@@ -184,11 +190,13 @@ class TestSandboxEngineTrading:
         """Limit order placed below market, fills when price reaches it."""
         config = SandboxConfig(
             tick_interval=60.0,
-            exchanges=[SimulatedExchangeConfig(
-                name="sim_ex",
-                trading_pairs=["BTC-USDT"],
-                initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
-            )],
+            exchanges=[
+                SimulatedExchangeConfig(
+                    name="sim_ex",
+                    trading_pairs=["BTC-USDT"],
+                    initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
+                )
+            ],
             matching_engine=LimitOrderEngine(),
             fee_model=ZeroFeeModel(),
         )
@@ -224,11 +232,13 @@ class TestSandboxEngineFees:
         """Verify fees are deducted from balances."""
         config = SandboxConfig(
             tick_interval=60.0,
-            exchanges=[SimulatedExchangeConfig(
-                name="sim_ex",
-                trading_pairs=["BTC-USDT"],
-                initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
-            )],
+            exchanges=[
+                SimulatedExchangeConfig(
+                    name="sim_ex",
+                    trading_pairs=["BTC-USDT"],
+                    initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
+                )
+            ],
             matching_engine=ImmediateFillEngine(),
             fee_model=FlatFeeModel(taker_rate=Decimal("0.001")),
         )
@@ -264,11 +274,13 @@ class TestSandboxEngineOrderCancellation:
         """Place and cancel a limit order using LimitOrderEngine."""
         config = SandboxConfig(
             tick_interval=60.0,
-            exchanges=[SimulatedExchangeConfig(
-                name="sim_ex",
-                trading_pairs=["BTC-USDT"],
-                initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
-            )],
+            exchanges=[
+                SimulatedExchangeConfig(
+                    name="sim_ex",
+                    trading_pairs=["BTC-USDT"],
+                    initial_balances={"USDT": Decimal("100000"), "BTC": Decimal("2.0")},
+                )
+            ],
             matching_engine=LimitOrderEngine(),
             fee_model=ZeroFeeModel(),
         )
@@ -284,7 +296,10 @@ class TestSandboxEngineOrderCancellation:
             connector = connectors["sim_ex"]
             if len(order_ids) == 0:
                 oid = connector.sim_exchange.buy(
-                    "BTC-USDT", Decimal("0.1"), SimOrderType.LIMIT, Decimal("40000")  # Far below market
+                    "BTC-USDT",
+                    Decimal("0.1"),
+                    SimOrderType.LIMIT,
+                    Decimal("40000"),  # Far below market
                 )
                 order_ids.append(oid)
             elif len(order_ids) == 1:

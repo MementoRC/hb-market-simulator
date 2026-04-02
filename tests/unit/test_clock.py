@@ -1,6 +1,7 @@
 """Tests for SimulatedClock."""
 
 import pytest
+
 from market_simulator.core.clock import SimulatedClock
 
 

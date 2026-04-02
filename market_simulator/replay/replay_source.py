@@ -7,18 +7,13 @@ consumes these events to drive the simulation.
 
 from __future__ import annotations
 
-import heapq
+from collections.abc import Iterator
 from decimal import Decimal
-from typing import Iterator, List, Optional
 
 from market_simulator.core.types import TradeType
 from market_simulator.replay.data_types import (
-    CandleRecord,
-    OrderBookDiff,
-    OrderBookSnapshot,
     ReplayEvent,
     ReplayEventType,
-    TradeRecord,
 )
 from market_simulator.simulator.order_book import SimulatedOrderBook
 
@@ -37,27 +32,29 @@ class ReplayDataSource:
     """
 
     def __init__(self) -> None:
-        self._events: List[ReplayEvent] = []
+        self._events: list[ReplayEvent] = []
         self._sorted = False
 
-    def add_trades(self, trades: List[dict]) -> None:
+    def add_trades(self, trades: list[dict]) -> None:
         """Add trade records to the replay stream.
 
         Each dict must have: timestamp, trading_pair, price, amount, is_buyer_maker
         Optional: trade_id
         """
         for t in trades:
-            self._events.append(ReplayEvent(
-                timestamp=t["timestamp"],
-                event_type=ReplayEventType.TRADE,
-                trading_pair=t["trading_pair"],
-                data=t,
-            ))
+            self._events.append(
+                ReplayEvent(
+                    timestamp=t["timestamp"],
+                    event_type=ReplayEventType.TRADE,
+                    trading_pair=t["trading_pair"],
+                    data=t,
+                )
+            )
         self._sorted = False
 
     def add_candles(
         self,
-        candles: List[dict],
+        candles: list[dict],
         generate_order_book: bool = True,
         spread_bps: Decimal = Decimal("10"),
         depth_levels: int = 5,
@@ -69,12 +66,14 @@ class ReplayDataSource:
         generated from each candle's close price with the given spread and depth.
         """
         for c in candles:
-            self._events.append(ReplayEvent(
-                timestamp=c["timestamp"],
-                event_type=ReplayEventType.CANDLE,
-                trading_pair=c["trading_pair"],
-                data=c,
-            ))
+            self._events.append(
+                ReplayEvent(
+                    timestamp=c["timestamp"],
+                    event_type=ReplayEventType.CANDLE,
+                    trading_pair=c["trading_pair"],
+                    data=c,
+                )
+            )
 
             if generate_order_book:
                 close = Decimal(str(c["close"]))
@@ -87,37 +86,41 @@ class ReplayDataSource:
                     bids.append((mid - offset, depth_quantity))
                     asks.append((mid + offset, depth_quantity))
 
-                self._events.append(ReplayEvent(
-                    timestamp=c["timestamp"],
-                    event_type=ReplayEventType.ORDER_BOOK_SNAPSHOT,
-                    trading_pair=c["trading_pair"],
-                    data={
-                        "timestamp": c["timestamp"],
-                        "trading_pair": c["trading_pair"],
-                        "bids": bids,
-                        "asks": asks,
-                    },
-                ))
+                self._events.append(
+                    ReplayEvent(
+                        timestamp=c["timestamp"],
+                        event_type=ReplayEventType.ORDER_BOOK_SNAPSHOT,
+                        trading_pair=c["trading_pair"],
+                        data={
+                            "timestamp": c["timestamp"],
+                            "trading_pair": c["trading_pair"],
+                            "bids": bids,
+                            "asks": asks,
+                        },
+                    )
+                )
         self._sorted = False
 
-    def add_order_book_snapshots(self, snapshots: List[dict]) -> None:
+    def add_order_book_snapshots(self, snapshots: list[dict]) -> None:
         """Add order book snapshots to the replay stream.
 
         Each dict must have: timestamp, trading_pair, bids, asks
         """
         for s in snapshots:
-            self._events.append(ReplayEvent(
-                timestamp=s["timestamp"],
-                event_type=ReplayEventType.ORDER_BOOK_SNAPSHOT,
-                trading_pair=s["trading_pair"],
-                data=s,
-            ))
+            self._events.append(
+                ReplayEvent(
+                    timestamp=s["timestamp"],
+                    event_type=ReplayEventType.ORDER_BOOK_SNAPSHOT,
+                    trading_pair=s["trading_pair"],
+                    data=s,
+                )
+            )
         self._sorted = False
 
     def events(
         self,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
     ) -> Iterator[ReplayEvent]:
         """Yield events in timestamp order within the given time range."""
         if not self._sorted:
@@ -132,7 +135,7 @@ class ReplayDataSource:
             yield event
 
     @property
-    def time_range(self) -> Optional[tuple[float, float]]:
+    def time_range(self) -> tuple[float, float] | None:
         """Return (earliest, latest) timestamps, or None if empty."""
         if not self._events:
             return None

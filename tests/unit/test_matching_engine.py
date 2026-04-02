@@ -3,8 +3,13 @@
 from decimal import Decimal
 
 import pytest
+
 from market_simulator.core.types import InFlightOrder, OrderStatus, OrderType, TradeType
-from market_simulator.simulator.matching_engine import ImmediateFillEngine, LimitOrderEngine, OrderBookDepthEngine
+from market_simulator.simulator.matching_engine import (
+    ImmediateFillEngine,
+    LimitOrderEngine,
+    OrderBookDepthEngine,
+)
 from market_simulator.simulator.order_book import SimulatedOrderBook
 
 
@@ -129,7 +134,9 @@ class TestOrderBookDepthEngine:
     def test_market_buy_walks_depth(self, book):
         engine = OrderBookDepthEngine()
         # Buy 2.0: 1.0 @ 50100 + 1.0 @ 50200 = VWAP 50150
-        order = _make_order(TradeType.BUY, OrderType.MARKET, amount=Decimal("2.0"), price=Decimal("0"))
+        order = _make_order(
+            TradeType.BUY, OrderType.MARKET, amount=Decimal("2.0"), price=Decimal("0")
+        )
         result = engine.check_and_match(order, book)
         assert result is not None
         assert result.fill_price == Decimal("50150")
@@ -139,14 +146,18 @@ class TestOrderBookDepthEngine:
     def test_market_sell_walks_depth(self, book):
         engine = OrderBookDepthEngine()
         # Sell 2.0: 1.0 @ 50000 + 1.0 @ 49900 = VWAP 49950
-        order = _make_order(TradeType.SELL, OrderType.MARKET, amount=Decimal("2.0"), price=Decimal("0"))
+        order = _make_order(
+            TradeType.SELL, OrderType.MARKET, amount=Decimal("2.0"), price=Decimal("0")
+        )
         result = engine.check_and_match(order, book)
         assert result.fill_price == Decimal("49950")
 
     def test_partial_fill_insufficient_liquidity(self, book):
         engine = OrderBookDepthEngine()
         # Buy 10.0 but only 6.0 available (1+2+3)
-        order = _make_order(TradeType.BUY, OrderType.MARKET, amount=Decimal("10.0"), price=Decimal("0"))
+        order = _make_order(
+            TradeType.BUY, OrderType.MARKET, amount=Decimal("10.0"), price=Decimal("0")
+        )
         result = engine.check_and_match(order, book)
         assert result is not None
         assert result.fill_amount == Decimal("6.0")
@@ -155,7 +166,9 @@ class TestOrderBookDepthEngine:
     def test_limit_buy_respects_price(self, book):
         engine = OrderBookDepthEngine()
         # Buy up to 50150 — only gets 50100 level
-        order = _make_order(TradeType.BUY, OrderType.LIMIT, amount=Decimal("5.0"), price=Decimal("50150"))
+        order = _make_order(
+            TradeType.BUY, OrderType.LIMIT, amount=Decimal("5.0"), price=Decimal("50150")
+        )
         result = engine.check_and_match(order, book)
         assert result is not None
         assert result.fill_amount == Decimal("1.0")
@@ -164,7 +177,9 @@ class TestOrderBookDepthEngine:
     def test_limit_sell_respects_price(self, book):
         engine = OrderBookDepthEngine()
         # Sell at >= 49950 — only gets 50000 level
-        order = _make_order(TradeType.SELL, OrderType.LIMIT, amount=Decimal("5.0"), price=Decimal("49950"))
+        order = _make_order(
+            TradeType.SELL, OrderType.LIMIT, amount=Decimal("5.0"), price=Decimal("49950")
+        )
         result = engine.check_and_match(order, book)
         assert result is not None
         assert result.fill_amount == Decimal("1.0")
@@ -172,7 +187,9 @@ class TestOrderBookDepthEngine:
 
     def test_limit_no_cross(self, book):
         engine = OrderBookDepthEngine()
-        order = _make_order(TradeType.BUY, OrderType.LIMIT, amount=Decimal("1.0"), price=Decimal("50000"))
+        order = _make_order(
+            TradeType.BUY, OrderType.LIMIT, amount=Decimal("1.0"), price=Decimal("50000")
+        )
         result = engine.check_and_match(order, book)
         assert result is None
 

@@ -6,9 +6,8 @@ Handles lock-on-order, release-on-cancel, and debit/credit-on-fill.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict
 
 
 @dataclass
@@ -34,13 +33,12 @@ class BalanceManager:
     """
 
     def __init__(self) -> None:
-        self._balances: Dict[str, TokenBalance] = {}
+        self._balances: dict[str, TokenBalance] = {}
 
-    def set_initial_balances(self, balances: Dict[str, Decimal]) -> None:
+    def set_initial_balances(self, balances: dict[str, Decimal]) -> None:
         """Set starting balances, replacing any existing state."""
         self._balances = {
-            currency: TokenBalance(total=amount)
-            for currency, amount in balances.items()
+            currency: TokenBalance(total=amount) for currency, amount in balances.items()
         }
 
     def get_balance(self, currency: str) -> Decimal:
@@ -53,11 +51,11 @@ class BalanceManager:
         bal = self._balances.get(currency)
         return bal.available if bal else Decimal("0")
 
-    def get_all_balances(self) -> Dict[str, Decimal]:
+    def get_all_balances(self) -> dict[str, Decimal]:
         """Get total balances for all currencies."""
         return {currency: bal.total for currency, bal in self._balances.items()}
 
-    def get_all_available_balances(self) -> Dict[str, Decimal]:
+    def get_all_available_balances(self) -> dict[str, Decimal]:
         """Get available balances for all currencies."""
         return {currency: bal.available for currency, bal in self._balances.items()}
 

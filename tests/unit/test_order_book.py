@@ -3,6 +3,7 @@
 from decimal import Decimal
 
 import pytest
+
 from market_simulator.core.types import PriceType, TradeType
 from market_simulator.simulator.order_book import SimulatedOrderBook
 

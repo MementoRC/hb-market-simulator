@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum, auto
-from typing import List, Tuple
 
 
 class ReplayEventType(Enum):
@@ -37,8 +36,8 @@ class OrderBookSnapshot:
 
     timestamp: float
     trading_pair: str
-    bids: List[Tuple[Decimal, Decimal]]  # (price, quantity)
-    asks: List[Tuple[Decimal, Decimal]]
+    bids: list[tuple[Decimal, Decimal]]  # (price, quantity)
+    asks: list[tuple[Decimal, Decimal]]
 
 
 @dataclass(frozen=True)
@@ -47,8 +46,8 @@ class OrderBookDiff:
 
     timestamp: float
     trading_pair: str
-    bid_diffs: List[Tuple[Decimal, Decimal]]  # (price, quantity) — 0 qty = remove
-    ask_diffs: List[Tuple[Decimal, Decimal]]
+    bid_diffs: list[tuple[Decimal, Decimal]]  # (price, quantity) — 0 qty = remove
+    ask_diffs: list[tuple[Decimal, Decimal]]
 
 
 @dataclass(frozen=True)

@@ -8,9 +8,10 @@ The hb_compat layer wraps it as a ConnectorBase-compatible object.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from market_simulator.core.events import EventBus, MarketEvent
 from market_simulator.core.types import (
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Event payload dataclasses (mirrors hummingbot event classes)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class OrderCreatedEvent:
@@ -91,18 +93,20 @@ class OrderFailureEvent:
 # Exchange configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SimulatedExchangeConfig:
     name: str = "simulated_exchange"
-    trading_pairs: List[str] = field(default_factory=list)
-    trading_rules: Dict[str, TradingRule] = field(default_factory=dict)
-    initial_balances: Dict[str, Decimal] = field(default_factory=dict)
+    trading_pairs: list[str] = field(default_factory=list)
+    trading_rules: dict[str, TradingRule] = field(default_factory=dict)
+    initial_balances: dict[str, Decimal] = field(default_factory=dict)
     is_perpetual: bool = False
 
 
 # ---------------------------------------------------------------------------
 # SimulatedExchange
 # ---------------------------------------------------------------------------
+
 
 class SimulatedExchange:
     """Pure-Python simulated exchange.
@@ -127,7 +131,7 @@ class SimulatedExchange:
         self._trading_pairs = list(self._config.trading_pairs)
 
         # Components
-        self._order_books: Dict[str, SimulatedOrderBook] = {}
+        self._order_books: dict[str, SimulatedOrderBook] = {}
         self._balance_manager = BalanceManager()
         self._matching_engine = matching_engine or LimitOrderEngine()
         self._order_tracker = OrderTracker()
@@ -135,7 +139,7 @@ class SimulatedExchange:
         self._event_bus = EventBus()
 
         # Trading rules
-        self._trading_rules: Dict[str, TradingRule] = dict(self._config.trading_rules)
+        self._trading_rules: dict[str, TradingRule] = dict(self._config.trading_rules)
 
         # State
         self._current_timestamp: float = 0.0
@@ -164,7 +168,7 @@ class SimulatedExchange:
         return self._name
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -176,11 +180,11 @@ class SimulatedExchange:
         self._ready = value
 
     @property
-    def trading_rules(self) -> Dict[str, TradingRule]:
+    def trading_rules(self) -> dict[str, TradingRule]:
         return self._trading_rules
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._order_tracker.in_flight_orders
 
     @property
@@ -233,10 +237,10 @@ class SimulatedExchange:
     def get_available_balance(self, currency: str) -> Decimal:
         return self._balance_manager.get_available_balance(currency)
 
-    def get_all_balances(self) -> Dict[str, Decimal]:
+    def get_all_balances(self) -> dict[str, Decimal]:
         return self._balance_manager.get_all_balances()
 
-    def set_initial_balances(self, balances: Dict[str, Decimal]) -> None:
+    def set_initial_balances(self, balances: dict[str, Decimal]) -> None:
         self._balance_manager.set_initial_balances(balances)
 
     # -------------------------------------------------------------------
@@ -284,9 +288,7 @@ class SimulatedExchange:
 
     def cancel(self, trading_pair: str, client_order_id: str) -> None:
         """Cancel an open order."""
-        order = self._order_tracker.cancel_order(
-            client_order_id, timestamp=self._current_timestamp
-        )
+        order = self._order_tracker.cancel_order(client_order_id, timestamp=self._current_timestamp)
         if order is None:
             logger.warning("Cannot cancel order %s: not found or already done", client_order_id)
             return
@@ -310,7 +312,7 @@ class SimulatedExchange:
             ),
         )
 
-    def get_in_flight_order(self, client_order_id: str) -> Optional[InFlightOrder]:
+    def get_in_flight_order(self, client_order_id: str) -> InFlightOrder | None:
         return self._order_tracker.get_order(client_order_id)
 
     # -------------------------------------------------------------------
@@ -376,9 +378,7 @@ class SimulatedExchange:
             lock_amount = amount
 
         if not self._balance_manager.lock_collateral(lock_currency, lock_amount):
-            self._order_tracker.fail_order(
-                order.client_order_id, timestamp=self._current_timestamp
-            )
+            self._order_tracker.fail_order(order.client_order_id, timestamp=self._current_timestamp)
             self._event_bus.trigger_event(
                 MarketEvent.OrderFailure,
                 OrderFailureEvent(
@@ -390,9 +390,7 @@ class SimulatedExchange:
             return order.client_order_id
 
         # Transition to OPEN and emit created event
-        self._order_tracker.open_order(
-            order.client_order_id, timestamp=self._current_timestamp
-        )
+        self._order_tracker.open_order(order.client_order_id, timestamp=self._current_timestamp)
 
         event_tag = (
             MarketEvent.BuyOrderCreated
@@ -431,8 +429,11 @@ class SimulatedExchange:
         """Process a fill: update balance, order state, emit events."""
         # Calculate fee
         fee = self._fee_model.calculate_fee(
-            order.trading_pair, order.trade_type, order.order_type,
-            fill_amount, fill_price,
+            order.trading_pair,
+            order.trade_type,
+            order.order_type,
+            fill_amount,
+            fill_price,
         )
         fee_amount = fee.total_flat_fee
         fee_currency = order.quote_asset  # Default to quote

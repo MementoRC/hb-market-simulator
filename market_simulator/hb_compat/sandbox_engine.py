@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional
 
 from market_simulator.core.clock import SimulatedClock
 from market_simulator.hb_compat.simulated_connector import SimulatedConnector
@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SandboxConfig:
     """Configuration for a sandbox simulation run."""
@@ -41,16 +42,17 @@ class SandboxConfig:
     tick_interval: float = 1.0  # seconds between ticks
 
     # Exchange configs (one per simulated exchange)
-    exchanges: List[SimulatedExchangeConfig] = field(default_factory=list)
+    exchanges: list[SimulatedExchangeConfig] = field(default_factory=list)
 
     # Matching and fee models (shared defaults, can override per exchange)
-    matching_engine: Optional[MatchingEngine] = None
-    fee_model: Optional[FeeModel] = None
+    matching_engine: MatchingEngine | None = None
+    fee_model: FeeModel | None = None
 
 
 # ---------------------------------------------------------------------------
 # Simulation results
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SimulationResult:
@@ -60,7 +62,7 @@ class SimulationResult:
     end_time: float
     ticks_processed: int
     events_replayed: int
-    final_balances: Dict[str, Dict[str, Decimal]]  # exchange_name -> {currency: balance}
+    final_balances: dict[str, dict[str, Decimal]]  # exchange_name -> {currency: balance}
     orders_placed: int
     orders_filled: int
     orders_cancelled: int
@@ -69,6 +71,7 @@ class SimulationResult:
 # ---------------------------------------------------------------------------
 # SandboxEngine
 # ---------------------------------------------------------------------------
+
 
 class SandboxEngine:
     """Orchestrates an offline simulation.
@@ -103,8 +106,8 @@ class SandboxEngine:
         )
 
         # Create connectors
-        self._connectors: Dict[str, SimulatedConnector] = {}
-        self._replay_sources: Dict[str, ReplayDataSource] = {}
+        self._connectors: dict[str, SimulatedConnector] = {}
+        self._replay_sources: dict[str, ReplayDataSource] = {}
 
         for ex_config in config.exchanges:
             connector = SimulatedConnector(
@@ -115,7 +118,7 @@ class SandboxEngine:
             self._connectors[ex_config.name] = connector
 
         # Track replay position per exchange to avoid re-applying events
-        self._replay_cursors: Dict[str, float] = {}
+        self._replay_cursors: dict[str, float] = {}
 
         # Stats
         self._events_replayed = 0
@@ -129,7 +132,7 @@ class SandboxEngine:
         return self._clock
 
     @property
-    def connectors(self) -> Dict[str, SimulatedConnector]:
+    def connectors(self) -> dict[str, SimulatedConnector]:
         """Get connectors dict — inject into StrategyV2Base.connectors."""
         return dict(self._connectors)
 
@@ -178,7 +181,7 @@ class SandboxEngine:
 
     def run(
         self,
-        on_tick: Optional[Callable[[float, Dict[str, SimulatedConnector]], None]] = None,
+        on_tick: Callable[[float, dict[str, SimulatedConnector]], None] | None = None,
     ) -> SimulationResult:
         """Run the simulation from start to end.
 
@@ -242,9 +245,7 @@ class SandboxEngine:
 
             self._replay_cursors[exchange_name] = timestamp
 
-    def _build_result(
-        self, start: float, end: float, ticks: int
-    ) -> SimulationResult:
+    def _build_result(self, start: float, end: float, ticks: int) -> SimulationResult:
         """Collect final simulation state."""
         final_balances = {}
         total_orders = 0
@@ -258,6 +259,7 @@ class SandboxEngine:
             for order in tracker.all_orders.values():
                 total_orders += 1
                 from market_simulator.core.types import OrderStatus
+
                 if order.status == OrderStatus.FILLED:
                     total_filled += 1
                 elif order.status == OrderStatus.CANCELLED:
