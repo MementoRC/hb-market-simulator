@@ -29,7 +29,8 @@ class MarketDataProtocol(Protocol):
     def get_order_book_snapshot(self, trading_pair: str) -> dict: ...
 
     @property
-    def trading_rules(self) -> dict[str, TradingRule]: ...
+    def trading_rules(self) -> dict[str, TradingRule]:
+        """Trading rules for all pairs."""
 
     def quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal: ...
 
@@ -44,7 +45,8 @@ class BalanceProtocol(Protocol):
 
     def get_available_balance(self, currency: str) -> Decimal: ...
 
-    def get_all_balances(self) -> dict[str, Decimal]: ...
+    def get_all_balances(self) -> dict[str, Decimal]:
+        """Return all balances."""
 
 
 @runtime_checkable
@@ -72,9 +74,11 @@ class OrderExecutionProtocol(Protocol):
     def cancel(self, trading_pair: str, client_order_id: str) -> None: ...
 
     @property
-    def in_flight_orders(self) -> dict[str, InFlightOrder]: ...
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
+        """Active orders."""
 
-    def get_in_flight_order(self, client_order_id: str) -> InFlightOrder | None: ...
+    def get_in_flight_order(self, client_order_id: str) -> InFlightOrder | None:
+        """Look up a specific in-flight order."""
 
 
 @runtime_checkable
@@ -93,10 +97,13 @@ class ReadinessProtocol(Protocol):
     """Connector identity and readiness."""
 
     @property
-    def ready(self) -> bool: ...
+    def ready(self) -> bool:
+        """Whether the connector is ready."""
 
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Connector name."""
 
     @property
-    def trading_pairs(self) -> list[str]: ...
+    def trading_pairs(self) -> list[str]:
+        """Active trading pairs."""
