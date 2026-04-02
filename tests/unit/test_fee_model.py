@@ -9,7 +9,9 @@ from market_simulator.simulator.fee_model import FlatFeeModel, ZeroFeeModel
 class TestZeroFeeModel:
     def test_zero_fees(self):
         model = ZeroFeeModel()
-        fee = model.calculate_fee("BTC-USDT", TradeType.BUY, OrderType.MARKET, Decimal("1"), Decimal("50000"))
+        fee = model.calculate_fee(
+            "BTC-USDT", TradeType.BUY, OrderType.MARKET, Decimal("1"), Decimal("50000")
+        )
         assert fee.percent == Decimal("0")
         assert fee.total_flat_fee == Decimal("0")
 

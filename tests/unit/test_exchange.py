@@ -110,7 +110,7 @@ class TestMarketOrderBuy:
         ex.add_listener(MarketEvent.OrderFilled, collector)
         ex.add_listener(MarketEvent.BuyOrderCompleted, collector)
 
-        _order_id = ex.buy("BTC-USDT", Decimal("1.0"), OrderType.MARKET, Decimal("0"))
+        ex.buy("BTC-USDT", Decimal("1.0"), OrderType.MARKET, Decimal("0"))
 
         # Should get Created -> Filled -> Completed
         assert len(collector.events) == 3
@@ -262,8 +262,8 @@ class TestInsufficientBalance:
 class TestMultipleOrders:
     def test_multiple_limit_orders(self):
         ex = _make_exchange()
-        _id1 = ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50100"))
-        _id2 = ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50200"))
+        ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50100"))
+        ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50200"))
 
         assert len(ex.in_flight_orders) == 2
 

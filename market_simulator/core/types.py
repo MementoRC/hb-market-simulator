@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, IntEnum, auto
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -109,7 +108,7 @@ class InFlightOrder:
     creation_timestamp: float = 0.0
     last_update_timestamp: float = 0.0
     position_action: PositionAction = PositionAction.NIL
-    exchange_order_id: Optional[str] = None
+    exchange_order_id: str | None = None
 
     @property
     def is_open(self) -> bool:

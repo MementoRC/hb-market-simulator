@@ -6,16 +6,21 @@ Tracks open orders, records trade fills, and manages order state transitions.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Dict, List, Optional
 
-from market_simulator.core.types import InFlightOrder, OrderStatus, OrderType, PositionAction, TradeType
+from market_simulator.core.types import (
+    InFlightOrder,
+    OrderStatus,
+    OrderType,
+    PositionAction,
+    TradeType,
+)
 
 
 class OrderTracker:
     """Tracks all in-flight orders and their state transitions."""
 
     def __init__(self) -> None:
-        self._orders: Dict[str, InFlightOrder] = {}
+        self._orders: dict[str, InFlightOrder] = {}
         self._order_counter: int = 0
 
     def generate_order_id(self, prefix: str = "SIM") -> str:
@@ -32,7 +37,7 @@ class OrderTracker:
         price: Decimal,
         timestamp: float = 0.0,
         position_action: PositionAction = PositionAction.NIL,
-        client_order_id: Optional[str] = None,
+        client_order_id: str | None = None,
     ) -> InFlightOrder:
         """Create and track a new order."""
         order_id = client_order_id or self.generate_order_id()
@@ -51,7 +56,7 @@ class OrderTracker:
         self._orders[order_id] = order
         return order
 
-    def get_order(self, client_order_id: str) -> Optional[InFlightOrder]:
+    def get_order(self, client_order_id: str) -> InFlightOrder | None:
         """Get an order by client order ID."""
         return self._orders.get(client_order_id)
 
@@ -62,7 +67,7 @@ class OrderTracker:
             order.status = OrderStatus.OPEN
             order.last_update_timestamp = timestamp
 
-    def cancel_order(self, client_order_id: str, timestamp: float = 0.0) -> Optional[InFlightOrder]:
+    def cancel_order(self, client_order_id: str, timestamp: float = 0.0) -> InFlightOrder | None:
         """Cancel an open order. Returns the order if found and cancellable."""
         order = self._orders.get(client_order_id)
         if order and order.is_open:
@@ -71,7 +76,7 @@ class OrderTracker:
             return order
         return None
 
-    def fail_order(self, client_order_id: str, timestamp: float = 0.0) -> Optional[InFlightOrder]:
+    def fail_order(self, client_order_id: str, timestamp: float = 0.0) -> InFlightOrder | None:
         """Mark an order as failed."""
         order = self._orders.get(client_order_id)
         if order and order.is_open:
@@ -81,25 +86,25 @@ class OrderTracker:
         return None
 
     @property
-    def open_orders(self) -> List[InFlightOrder]:
+    def open_orders(self) -> list[InFlightOrder]:
         """Get all currently open orders."""
         return [o for o in self._orders.values() if o.is_open]
 
     @property
-    def open_buy_orders(self) -> List[InFlightOrder]:
+    def open_buy_orders(self) -> list[InFlightOrder]:
         return [o for o in self.open_orders if o.trade_type == TradeType.BUY]
 
     @property
-    def open_sell_orders(self) -> List[InFlightOrder]:
+    def open_sell_orders(self) -> list[InFlightOrder]:
         return [o for o in self.open_orders if o.trade_type == TradeType.SELL]
 
     @property
-    def all_orders(self) -> Dict[str, InFlightOrder]:
+    def all_orders(self) -> dict[str, InFlightOrder]:
         """Get all tracked orders."""
         return dict(self._orders)
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         """Get orders that are still in-flight (not done)."""
         return {oid: o for oid, o in self._orders.items() if not o.is_done}
 
