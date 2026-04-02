@@ -10,6 +10,9 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+
+pytest.importorskip("hummingbot", reason="hummingbot not installed (CI-safe skip)")
+
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.core.data_type.common import OrderType, TradeType
 

@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("hummingbot", reason="hummingbot not installed (CI-safe skip)")
+
 from market_simulator.core.types import OrderType as SimOrderType
 from market_simulator.hb_compat.sandbox_engine import SandboxConfig, SandboxEngine, SimulationResult
 from market_simulator.replay.data_loader import load_candles_csv
