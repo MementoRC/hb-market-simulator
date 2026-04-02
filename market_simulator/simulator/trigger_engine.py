@@ -12,7 +12,6 @@ from decimal import Decimal
 
 from market_simulator.core.types import InFlightOrder, OrderType, TradeType
 
-
 # ---------------------------------------------------------------------------
 # Order book snapshot type
 # ---------------------------------------------------------------------------
@@ -50,7 +49,6 @@ class TriggerEngine(ABC):
         :param timestamp: Current simulation timestamp (seconds).
         :return: True if the order trigger condition is met.
         """
-        ...
 
 
 # ---------------------------------------------------------------------------

@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from market_simulator.core.types import (
     InFlightOrder,
     OrderStatus,
@@ -21,7 +19,6 @@ from market_simulator.simulator.trigger_engine import (
     NullTriggerEngine,
     StandardTriggerEngine,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

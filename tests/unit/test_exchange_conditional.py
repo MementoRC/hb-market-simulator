@@ -9,14 +9,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from market_simulator.core.events import MarketEvent
 from market_simulator.core.types import OrderStatus, OrderType, TradeType
 from market_simulator.simulator.exchange import (
     OrderCancelledEvent,
     OrderCompletedEvent,
-    OrderCreatedEvent,
     OrderFailureEvent,
     OrderFilledEvent,
     OrderTriggeredEvent,
@@ -29,7 +26,6 @@ from market_simulator.simulator.trigger_engine import (
     NullTriggerEngine,
     StandardTriggerEngine,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -166,7 +162,7 @@ class TestConditionalOrderFiring:
         ex = _make_exchange()
         collector = _register_all_conditional_events(ex)
 
-        order_id = ex.buy(
+        ex.buy(
             "BTC-USDT",
             Decimal("1.0"),
             OrderType.TAKE_PROFIT,
@@ -186,7 +182,7 @@ class TestConditionalOrderFiring:
         ex = _make_exchange()
         collector = _register_all_conditional_events(ex)
 
-        order_id = ex.sell(
+        ex.sell(
             "BTC-USDT",
             Decimal("1.0"),
             OrderType.TAKE_PROFIT,
@@ -219,7 +215,7 @@ class TestTrailingStopExchange:
 
         # Place trailing stop: trigger_price sets initial watermark at 50000,
         # trail_amount = 200. Fires when ask >= watermark + 200.
-        order_id = ex.buy(
+        ex.buy(
             "BTC-USDT",
             Decimal("1.0"),
             OrderType.TRAILING_STOP,
@@ -258,7 +254,7 @@ class TestTrailingStopExchange:
         book = ex.get_order_book("BTC-USDT")
 
         # trigger_price=50000, trail_amount=200; fires when bid <= watermark - 200
-        order_id = ex.sell(
+        ex.sell(
             "BTC-USDT",
             Decimal("1.0"),
             OrderType.TRAILING_STOP,

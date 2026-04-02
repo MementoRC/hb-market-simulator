@@ -345,7 +345,9 @@ class SimulatedExchange:
         self._balance_manager.apply_cancel(locked_currency, locked_amount)
 
         # Clean up any trailing stop reference for cancelled conditional orders.
-        if order.order_type.is_conditional and isinstance(self._trigger_engine, StandardTriggerEngine):
+        if order.order_type.is_conditional and isinstance(
+            self._trigger_engine, StandardTriggerEngine
+        ):
             self._trigger_engine.clear_trailing_reference(client_order_id)
 
         self._event_bus.trigger_event(
@@ -442,7 +444,11 @@ class SimulatedExchange:
         # to the order price.  SELL orders always lock the base amount.
         if trade_type == TradeType.BUY:
             lock_currency = trading_pair.split("-")[1]
-            collateral_price = trigger_price if (order_type.is_conditional and trigger_price is not None) else price
+            collateral_price = (
+                trigger_price
+                if (order_type.is_conditional and trigger_price is not None)
+                else price
+            )
             lock_amount = amount * collateral_price
         else:
             lock_currency = trading_pair.split("-")[0]
