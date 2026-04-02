@@ -31,6 +31,7 @@ class MarketEvent(IntEnum):
     OrderFailure = 8
     OrderExpired = 9
     FundingPaymentCompleted = 10
+    OrderTriggered = 11
 
 
 class EventBus:

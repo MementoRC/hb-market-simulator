@@ -38,6 +38,8 @@ class OrderTracker:
         timestamp: float = 0.0,
         position_action: PositionAction = PositionAction.NIL,
         client_order_id: str | None = None,
+        trigger_price: Decimal | None = None,
+        trail_amount: Decimal | None = None,
     ) -> InFlightOrder:
         """Create and track a new order."""
         order_id = client_order_id or self.generate_order_id()
@@ -52,6 +54,8 @@ class OrderTracker:
             creation_timestamp=timestamp,
             last_update_timestamp=timestamp,
             position_action=position_action,
+            trigger_price=trigger_price,
+            trail_amount=trail_amount,
         )
         self._orders[order_id] = order
         return order
@@ -84,6 +88,15 @@ class OrderTracker:
             order.last_update_timestamp = timestamp
             return order
         return None
+
+    @property
+    def conditional_orders(self) -> dict[str, InFlightOrder]:
+        """Return all open conditional orders."""
+        return {
+            oid: order
+            for oid, order in self._orders.items()
+            if order.is_conditional and order.is_open
+        }
 
     @property
     def open_orders(self) -> list[InFlightOrder]:
