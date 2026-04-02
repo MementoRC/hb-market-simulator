@@ -39,6 +39,7 @@ from market_simulator.core.types import (
 )
 from market_simulator.simulator.exchange import (
     OrderFilledEvent,
+    OrderTriggeredEvent,
     SimulatedExchange,
     SimulatedExchangeConfig,
 )
@@ -53,6 +54,12 @@ _HB_TO_SIM_ORDER_TYPE = {
     OrderType.MARKET: SimOrderType.MARKET,
     OrderType.LIMIT: SimOrderType.LIMIT,
     OrderType.LIMIT_MAKER: SimOrderType.LIMIT_MAKER,
+    # Conditional order types: hummingbot's OrderType does not define these
+    # variants, so callers must pass SimOrderType directly.  The identity
+    # entries below make _place_order() work uniformly for both cases.
+    SimOrderType.STOP_LOSS: SimOrderType.STOP_LOSS,
+    SimOrderType.TAKE_PROFIT: SimOrderType.TAKE_PROFIT,
+    SimOrderType.TRAILING_STOP: SimOrderType.TRAILING_STOP,
 }
 
 _HB_TO_SIM_TRADE_TYPE = {
@@ -162,6 +169,8 @@ class SimulatedConnector(ExchangePyBase):
 
         # Wire up sim exchange fill events to feed ClientOrderTracker
         self._sim_exchange.add_listener(SimMarketEvent.OrderFilled, self._on_sim_fill)
+        # Wire up conditional order trigger events
+        self._sim_exchange.add_listener(SimMarketEvent.OrderTriggered, self._on_sim_triggered)
 
         # ExchangePyBase.__init__(balance_asset_limit, rate_limits_share_pct)
         # calls abstract properties immediately, so they must be ready above
@@ -224,7 +233,16 @@ class SimulatedConnector(ExchangePyBase):
     # -------------------------------------------------------------------
 
     def supported_order_types(self) -> list[OrderType]:
-        return [OrderType.MARKET, OrderType.LIMIT, OrderType.LIMIT_MAKER]
+        return [
+            OrderType.MARKET,
+            OrderType.LIMIT,
+            OrderType.LIMIT_MAKER,
+            # Conditional types are SimOrderType values; callers that are
+            # aware of the simulator can pass these directly to _place_order.
+            SimOrderType.STOP_LOSS,
+            SimOrderType.TAKE_PROFIT,
+            SimOrderType.TRAILING_STOP,
+        ]
 
     def _is_request_exception_related_to_time_synchronizer(
         self, request_exception: Exception
@@ -276,6 +294,10 @@ class SimulatedConnector(ExchangePyBase):
 
         sim_order_type = _HB_TO_SIM_ORDER_TYPE[order_type]
 
+        # Extract conditional order parameters forwarded from strategy callers.
+        trigger_price: Decimal | None = kwargs.get("trigger_price")
+        trail_amount: Decimal | None = kwargs.get("trail_amount")
+
         # Place on sim exchange (synchronous)
         if trade_type == TradeType.BUY:
             self._sim_exchange.buy(
@@ -283,6 +305,8 @@ class SimulatedConnector(ExchangePyBase):
                 amount,
                 sim_order_type,
                 price,
+                trigger_price=trigger_price,
+                trail_amount=trail_amount,
             )
         else:
             self._sim_exchange.sell(
@@ -290,6 +314,8 @@ class SimulatedConnector(ExchangePyBase):
                 amount,
                 sim_order_type,
                 price,
+                trigger_price=trigger_price,
+                trail_amount=trail_amount,
             )
 
         timestamp = self._sim_exchange.current_timestamp
@@ -477,6 +503,29 @@ class SimulatedConnector(ExchangePyBase):
                 exchange_order_id=tracked_order.exchange_order_id or "",
             )
             self._order_tracker.process_order_update(order_update)
+
+    def _on_sim_triggered(self, triggered_event: OrderTriggeredEvent) -> None:
+        """Called when SimulatedExchange fires a conditional order.
+
+        The sim exchange has already cancelled the original conditional order
+        and placed a new MARKET order internally.  Here we emit an
+        OrderUpdate(CANCELED) for the original tracked order so that
+        ClientOrderTracker and any attached strategy are kept in sync.
+        """
+        tracked_order = self._order_tracker.fetch_tracked_order(
+            triggered_event.original_order_id
+        )
+        if tracked_order is None:
+            return
+
+        order_update = OrderUpdate(
+            trading_pair=triggered_event.trading_pair,
+            update_timestamp=triggered_event.timestamp,
+            new_state=OrderState.CANCELED,
+            client_order_id=triggered_event.original_order_id,
+            exchange_order_id=tracked_order.exchange_order_id or "",
+        )
+        self._order_tracker.process_order_update(order_update)
 
     # -------------------------------------------------------------------
     # Access to underlying sim exchange
