@@ -10,12 +10,11 @@ import csv
 import logging
 from decimal import Decimal
 from pathlib import Path
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def load_trades_csv(path: Path, trading_pair: str = "") -> List[dict]:
+def load_trades_csv(path: Path, trading_pair: str = "") -> list[dict]:
     """Load trades from a CSV file.
 
     Expected columns: timestamp, trading_pair, trade_id, price, amount, is_buyer_maker
@@ -28,19 +27,21 @@ def load_trades_csv(path: Path, trading_pair: str = "") -> List[dict]:
         reader = csv.DictReader(f)
         for row in reader:
             pair = trading_pair or row.get("trading_pair", "")
-            trades.append({
-                "timestamp": float(row["timestamp"]),
-                "trading_pair": pair,
-                "trade_id": row.get("trade_id", ""),
-                "price": Decimal(row["price"]),
-                "amount": Decimal(row["amount"]),
-                "is_buyer_maker": row.get("is_buyer_maker", "false").lower() == "true",
-            })
+            trades.append(
+                {
+                    "timestamp": float(row["timestamp"]),
+                    "trading_pair": pair,
+                    "trade_id": row.get("trade_id", ""),
+                    "price": Decimal(row["price"]),
+                    "amount": Decimal(row["amount"]),
+                    "is_buyer_maker": row.get("is_buyer_maker", "false").lower() == "true",
+                }
+            )
     trades.sort(key=lambda t: t["timestamp"])
     return trades
 
 
-def load_candles_csv(path: Path, trading_pair: str = "") -> List[dict]:
+def load_candles_csv(path: Path, trading_pair: str = "") -> list[dict]:
     """Load OHLCV candles from a CSV file.
 
     Expected columns: timestamp, open, high, low, close, volume
@@ -53,21 +54,23 @@ def load_candles_csv(path: Path, trading_pair: str = "") -> List[dict]:
         reader = csv.DictReader(f)
         for row in reader:
             pair = trading_pair or row.get("trading_pair", "")
-            candles.append({
-                "timestamp": float(row["timestamp"]),
-                "trading_pair": pair,
-                "open": Decimal(row["open"]),
-                "high": Decimal(row["high"]),
-                "low": Decimal(row["low"]),
-                "close": Decimal(row["close"]),
-                "volume": Decimal(row["volume"]),
-                "interval": row.get("interval", "1m"),
-            })
+            candles.append(
+                {
+                    "timestamp": float(row["timestamp"]),
+                    "trading_pair": pair,
+                    "open": Decimal(row["open"]),
+                    "high": Decimal(row["high"]),
+                    "low": Decimal(row["low"]),
+                    "close": Decimal(row["close"]),
+                    "volume": Decimal(row["volume"]),
+                    "interval": row.get("interval", "1m"),
+                }
+            )
     candles.sort(key=lambda c: c["timestamp"])
     return candles
 
 
-def load_order_book_snapshots_csv(path: Path, trading_pair: str = "") -> List[dict]:
+def load_order_book_snapshots_csv(path: Path, trading_pair: str = "") -> list[dict]:
     """Load order book snapshots from CSV.
 
     Expected columns: timestamp, side, price, quantity
@@ -93,7 +96,7 @@ def load_order_book_snapshots_csv(path: Path, trading_pair: str = "") -> List[di
     return sorted(rows_by_ts.values(), key=lambda s: s["timestamp"])
 
 
-def load_trades_parquet(path: Path, trading_pair: str = "") -> List[dict]:
+def load_trades_parquet(path: Path, trading_pair: str = "") -> list[dict]:
     """Load trades from a Parquet file.
 
     Expected columns: timestamp, price, amount, is_buyer_maker
@@ -101,51 +104,55 @@ def load_trades_parquet(path: Path, trading_pair: str = "") -> List[dict]:
     """
     try:
         import pandas as pd
-    except ImportError:
-        raise ImportError("pandas is required for Parquet support")
+    except ImportError as err:
+        raise ImportError("pandas is required for Parquet support") from err
 
     df = pd.read_parquet(path)
     trades = []
     for _, row in df.iterrows():
         pair = trading_pair or str(row.get("trading_pair", ""))
-        trades.append({
-            "timestamp": float(row["timestamp"]),
-            "trading_pair": pair,
-            "trade_id": str(row.get("trade_id", "")),
-            "price": Decimal(str(row["price"])),
-            "amount": Decimal(str(row["amount"])),
-            "is_buyer_maker": bool(row.get("is_buyer_maker", False)),
-        })
+        trades.append(
+            {
+                "timestamp": float(row["timestamp"]),
+                "trading_pair": pair,
+                "trade_id": str(row.get("trade_id", "")),
+                "price": Decimal(str(row["price"])),
+                "amount": Decimal(str(row["amount"])),
+                "is_buyer_maker": bool(row.get("is_buyer_maker", False)),
+            }
+        )
     trades.sort(key=lambda t: t["timestamp"])
     return trades
 
 
-def load_candles_parquet(path: Path, trading_pair: str = "") -> List[dict]:
+def load_candles_parquet(path: Path, trading_pair: str = "") -> list[dict]:
     """Load OHLCV candles from a Parquet file."""
     try:
         import pandas as pd
-    except ImportError:
-        raise ImportError("pandas is required for Parquet support")
+    except ImportError as err:
+        raise ImportError("pandas is required for Parquet support") from err
 
     df = pd.read_parquet(path)
     candles = []
     for _, row in df.iterrows():
         pair = trading_pair or str(row.get("trading_pair", ""))
-        candles.append({
-            "timestamp": float(row["timestamp"]),
-            "trading_pair": pair,
-            "open": Decimal(str(row["open"])),
-            "high": Decimal(str(row["high"])),
-            "low": Decimal(str(row["low"])),
-            "close": Decimal(str(row["close"])),
-            "volume": Decimal(str(row["volume"])),
-            "interval": str(row.get("interval", "1m")),
-        })
+        candles.append(
+            {
+                "timestamp": float(row["timestamp"]),
+                "trading_pair": pair,
+                "open": Decimal(str(row["open"])),
+                "high": Decimal(str(row["high"])),
+                "low": Decimal(str(row["low"])),
+                "close": Decimal(str(row["close"])),
+                "volume": Decimal(str(row["volume"])),
+                "interval": str(row.get("interval", "1m")),
+            }
+        )
     candles.sort(key=lambda c: c["timestamp"])
     return candles
 
 
-def auto_load(path: Path, data_type: str, trading_pair: str = "") -> List[dict]:
+def auto_load(path: Path, data_type: str, trading_pair: str = "") -> list[dict]:
     """Auto-detect file format and load data.
 
     Args:
