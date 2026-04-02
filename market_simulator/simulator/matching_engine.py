@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Optional
 
 from market_simulator.core.types import InFlightOrder, MatchResult, OrderType, TradeType
 from market_simulator.simulator.order_book import SimulatedOrderBook
@@ -21,7 +20,7 @@ class MatchingEngine(ABC):
         self,
         order: InFlightOrder,
         order_book: SimulatedOrderBook,
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         """Check if an order can be matched and return the result.
 
         Returns None if the order cannot be matched at this time.
@@ -42,7 +41,7 @@ class ImmediateFillEngine(MatchingEngine):
         self,
         order: InFlightOrder,
         order_book: SimulatedOrderBook,
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         if order.order_type == OrderType.MARKET:
             if order.trade_type == TradeType.BUY:
                 price = order_book.best_ask
@@ -75,7 +74,7 @@ class LimitOrderEngine(MatchingEngine):
         self,
         order: InFlightOrder,
         order_book: SimulatedOrderBook,
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         if order.order_type == OrderType.MARKET:
             return self._match_market(order, order_book)
         elif order.order_type == OrderType.LIMIT:
@@ -86,11 +85,8 @@ class LimitOrderEngine(MatchingEngine):
 
     def _match_market(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
-        if order.trade_type == TradeType.BUY:
-            price = order_book.best_ask
-        else:
-            price = order_book.best_bid
+    ) -> MatchResult | None:
+        price = order_book.best_ask if order.trade_type == TradeType.BUY else order_book.best_bid
         if price is None:
             return None
         return MatchResult(
@@ -100,7 +96,7 @@ class LimitOrderEngine(MatchingEngine):
 
     def _match_limit(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         if order.trade_type == TradeType.BUY:
             best_ask = order_book.best_ask
             if best_ask is None or best_ask > order.price:
@@ -119,7 +115,7 @@ class LimitOrderEngine(MatchingEngine):
 
     def _match_limit_maker(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         """Maker-only: rejects if it would immediately cross the spread."""
         if order.trade_type == TradeType.BUY:
             best_ask = order_book.best_ask
@@ -156,7 +152,7 @@ class OrderBookDepthEngine(MatchingEngine):
         self,
         order: InFlightOrder,
         order_book: SimulatedOrderBook,
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         if order.order_type == OrderType.MARKET:
             return self._match_with_depth(order, order_book)
         elif order.order_type == OrderType.LIMIT:
@@ -168,7 +164,7 @@ class OrderBookDepthEngine(MatchingEngine):
 
     def _match_with_depth(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         """Walk depth for market orders."""
         side = order.trade_type
         remaining = order.remaining_amount
@@ -201,7 +197,7 @@ class OrderBookDepthEngine(MatchingEngine):
 
     def _match_limit_with_depth(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         """Walk depth for limit orders, respecting the price limit."""
         if order.trade_type == TradeType.BUY:
             best_ask = order_book.best_ask
@@ -242,7 +238,7 @@ class OrderBookDepthEngine(MatchingEngine):
 
     def _match_maker_passive(
         self, order: InFlightOrder, order_book: SimulatedOrderBook
-    ) -> Optional[MatchResult]:
+    ) -> MatchResult | None:
         """Passive fill: only fills if price comes to us."""
         if order.trade_type == TradeType.BUY:
             best_ask = order_book.best_ask

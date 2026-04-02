@@ -23,7 +23,7 @@ packages = ["market_simulator"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.dependencies]
 python = ">=3.10,<3.13"
@@ -31,6 +31,8 @@ aiohttp = ">=3.8.0"
 pandas = ">=1.0.0"
 pydantic = ">=2"
 numpy = ">=1.20.0"
+cython = ">=3"
+wheel = ">=0.37.0"
 
 [tool.pixi.feature.dev.dependencies]
 pytest = ">=7.4.0"
@@ -40,15 +42,59 @@ pytest-mock = "*"
 ruff = "*"
 mypy = "*"
 
+[tool.pixi.feature.ci.dependencies]
+ruff = ">=0.1.6"
+mypy = ">=1.5.1"
+pytest = ">=7.0.0"
+pytest-cov = ">=4.1.0"
+bandit = ">=1.8.0"
+pre-commit = ">=2.15.0"
+types-setuptools = "*"
+
+[tool.pixi.feature.quality-extended.dependencies]
+bandit = ">=1.8.0"
+pip-audit = "*"
+filelock = "*"
+
+[tool.pixi.feature.quality-extended.tasks]
+security-scan = "bandit -c pyproject.toml -r market_simulator/"
+safety-check = "pip-audit"
+
+[tool.pixi.feature.quality-ci.dependencies]
+python-build = "*"
+hatchling = "*"
+
+[tool.pixi.feature.quality-ci.tasks]
+build = "python -m build"
+
+[tool.pixi.feature.py310.dependencies]
+python = "3.10.*"
+
+[tool.pixi.feature.py311.dependencies]
+python = "3.11.*"
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+
 [tool.pixi.environments]
 default = { features = ["dev"], solve-group = "default" }
+ci = { features = ["ci", "dev"], solve-group = "default" }
+quality-extended = { features = ["quality-extended"], solve-group = "default" }
+quality-ci = { features = ["quality-ci"], solve-group = "default" }
+py310 = { features = ["py310", "dev"], solve-group = "py310" }
+py311 = { features = ["py311", "dev"], solve-group = "py311" }
+py312 = { features = ["py312", "dev"], solve-group = "py312" }
 
 [tool.pixi.tasks]
 test = "pytest tests/"
 test-unit = "pytest tests/unit/"
+test-integration = "pytest tests/integration"
 lint = "ruff check market_simulator tests"
 format = "ruff format market_simulator tests"
 format-check = "ruff format --check market_simulator tests"
+typecheck = "mypy market_simulator"
+type-check = "mypy market_simulator"
+security = "bandit -c pyproject.toml -r market_simulator/"
 quality = { depends-on = ["lint", "format-check"] }
 check = { depends-on = ["quality", "test"] }
 
@@ -61,7 +107,45 @@ select = ["E", "F", "I", "W", "B", "UP", "N", "SIM"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "asyncio: marks tests as asyncio tests",
+]
+timeout = 300
+timeout_method = "thread"
+addopts = "--strict-markers --strict-config"
+minversion = "7.0"
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source_pkgs = ["market_simulator", "tests"]
+omit = ["market_simulator/__about__.py"]
+
+[tool.coverage.report]
+fail_under = 0
+show_missing = true
+skip_covered = true
+skip_empty = true
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:", "raise NotImplementedError"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+strict_optional = false
+warn_return_any = false
+warn_unused_ignores = false
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B105", "B107"]
 
 [tool.hummingbot.supersedes]
 test_paths = []
