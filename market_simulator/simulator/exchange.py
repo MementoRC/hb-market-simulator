@@ -89,6 +89,16 @@ class OrderFailureEvent:
     order_type: OrderType
 
 
+@dataclass
+class OrderTriggeredEvent:
+    timestamp: float
+    original_order_id: str
+    trading_pair: str
+    order_type: OrderType
+    trade_type: TradeType
+    trigger_price: Decimal | None
+
+
 # ---------------------------------------------------------------------------
 # Exchange configuration
 # ---------------------------------------------------------------------------
