@@ -512,9 +512,7 @@ class SimulatedConnector(ExchangePyBase):
         OrderUpdate(CANCELED) for the original tracked order so that
         ClientOrderTracker and any attached strategy are kept in sync.
         """
-        tracked_order = self._order_tracker.fetch_tracked_order(
-            triggered_event.original_order_id
-        )
+        tracked_order = self._order_tracker.fetch_tracked_order(triggered_event.original_order_id)
         if tracked_order is None:
             return
 

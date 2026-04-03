@@ -61,8 +61,7 @@ def _make_exchange(
     config = SimulatedExchangeConfig(
         name="test_exchange",
         trading_pairs=["BTC-USDT"],
-        initial_balances=initial_balances
-        or {"USDT": Decimal("100000"), "BTC": Decimal("10")},
+        initial_balances=initial_balances or {"USDT": Decimal("100000"), "BTC": Decimal("10")},
     )
     ex = SimulatedExchange(
         config=config,
@@ -370,9 +369,7 @@ class TestConditionalOrderManagement:
     def test_conditional_order_fails_when_insufficient_balance(self):
         """Placing a conditional order with insufficient collateral emits OrderFailure."""
         # Only 100 USDT; trigger_price=50100 requires 50100 USDT collateral → fails
-        ex = _make_exchange(
-            initial_balances={"USDT": Decimal("100"), "BTC": Decimal("0")}
-        )
+        ex = _make_exchange(initial_balances={"USDT": Decimal("100"), "BTC": Decimal("0")})
         failure_collector = EventCollector()
         ex.add_listener(MarketEvent.OrderFailure, failure_collector)
 

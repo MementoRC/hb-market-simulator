@@ -162,8 +162,10 @@ class TestTrailingStop:
         # trigger_price = 50000, trail_amount = 500; ask is 50100 (above trigger)
         # Watermark init = 50000; ask (50100) >= 50000 + 500 = 50500? No → False
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.BUY,
-            trigger_price="50000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.BUY,
+            trigger_price="50000",
+            trail_amount="500",
         )
         snapshot = _make_snapshot(best_bid="49900", best_ask="50100")
         assert engine.evaluate(order, snapshot, timestamp=1.0) is False
@@ -172,8 +174,10 @@ class TestTrailingStop:
         """Watermark moves down when ask drops below the current reference."""
         engine = StandardTriggerEngine()
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.BUY,
-            trigger_price="50000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.BUY,
+            trigger_price="50000",
+            trail_amount="500",
             order_id="ORD-TRAIL-BUY",
         )
         # First tick: ask = 50000 → watermark stays 50000 (equal, not lower)
@@ -190,8 +194,10 @@ class TestTrailingStop:
         """BUY trailing stop fires when ask rises >= lowest_ask + trail_amount."""
         engine = StandardTriggerEngine()
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.BUY,
-            trigger_price="49000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.BUY,
+            trigger_price="49000",
+            trail_amount="500",
             order_id="ORD-TRAIL-BUY2",
         )
         # First tick: ask 48500 → watermark moves to 48500 (lower than trigger 49000)
@@ -204,8 +210,10 @@ class TestTrailingStop:
         """BUY trailing stop does not fire when ask has not risen enough."""
         engine = StandardTriggerEngine()
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.BUY,
-            trigger_price="49000", trail_amount="1000",
+            OrderType.TRAILING_STOP,
+            TradeType.BUY,
+            trigger_price="49000",
+            trail_amount="1000",
             order_id="ORD-TRAIL-BUY3",
         )
         # Watermark initialised to trigger_price 49000; need ask >= 50000 to fire
@@ -219,8 +227,10 @@ class TestTrailingStop:
         # Watermark = 51000; fire when bid <= 51000 - 500 = 50500? bid=50000 ≤ 50500 → True
         # Use a bid that does NOT cross: bid = 50600
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.SELL,
-            trigger_price="51000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.SELL,
+            trigger_price="51000",
+            trail_amount="500",
             order_id="ORD-TRAIL-SELL1",
         )
         snapshot = _make_snapshot(best_bid="50600", best_ask="50700")
@@ -230,8 +240,10 @@ class TestTrailingStop:
         """Watermark moves up when bid rises above the current reference."""
         engine = StandardTriggerEngine()
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.SELL,
-            trigger_price="51000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.SELL,
+            trigger_price="51000",
+            trail_amount="500",
             order_id="ORD-TRAIL-SELL2",
         )
         # First tick: bid = 51500 → watermark rises to 51500
@@ -245,8 +257,10 @@ class TestTrailingStop:
         """SELL trailing stop fires when bid drops >= trail_amount from high watermark."""
         engine = StandardTriggerEngine()
         order = _make_order(
-            OrderType.TRAILING_STOP, TradeType.SELL,
-            trigger_price="51000", trail_amount="500",
+            OrderType.TRAILING_STOP,
+            TradeType.SELL,
+            trigger_price="51000",
+            trail_amount="500",
             order_id="ORD-TRAIL-SELL3",
         )
         # First tick: bid = 52000 → watermark = 52000
@@ -287,7 +301,8 @@ class TestEdgeCases:
             OrderType.TRAILING_STOP,
         ):
             order = _make_order(
-                order_type, TradeType.SELL,
+                order_type,
+                TradeType.SELL,
                 trigger_price="1",
                 trail_amount="1",
             )
