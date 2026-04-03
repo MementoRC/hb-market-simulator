@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
+
 
 def calculate_max_drawdown(pnl_series: list[float] | object, n: int) -> tuple[float, float]:
     """Calculate max drawdown and max drawdown percentage.
@@ -40,6 +42,38 @@ def calculate_max_drawdown(pnl_series: list[float] | object, n: int) -> tuple[fl
             dd_pct = dd / peak
             if dd_pct > max_dd_pct:
                 max_dd_pct = dd_pct
+
+    return max_dd, max_dd_pct
+
+
+def calculate_max_drawdown_vectorized(
+    cumulative_returns: list[float] | object,
+) -> tuple[float, float]:
+    """Calculate max drawdown using NumPy vectorized operations.
+
+    Faster than the scalar loop for large arrays.  Uses
+    ``np.maximum.accumulate`` for peak tracking.
+
+    Args:
+        cumulative_returns: Cumulative P&L values.
+
+    Returns:
+        (max_drawdown_abs, max_drawdown_pct)
+    """
+    arr = np.asarray(cumulative_returns, dtype=np.float64)
+    if len(arr) == 0:
+        return 0.0, 0.0
+
+    peak = np.maximum.accumulate(arr)
+    drawdown = peak - arr
+
+    max_dd = float(np.max(drawdown))
+
+    # Percentage drawdown only where peak > 0
+    positive_peak = peak.copy()
+    positive_peak[positive_peak <= 0.0] = np.inf
+    dd_pct = drawdown / positive_peak
+    max_dd_pct = float(np.max(dd_pct))
 
     return max_dd, max_dd_pct
 

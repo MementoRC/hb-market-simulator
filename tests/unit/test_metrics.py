@@ -20,6 +20,9 @@ from market_simulator.metrics.__pure_python__.performance import (
     calculate_max_drawdown as pp_calculate_max_drawdown,
 )
 from market_simulator.metrics.__pure_python__.performance import (
+    calculate_max_drawdown_vectorized as pp_calculate_max_drawdown_vectorized,
+)
+from market_simulator.metrics.__pure_python__.performance import (
     calculate_profit_factor as pp_calculate_profit_factor,
 )
 from market_simulator.metrics.__pure_python__.performance import (
@@ -28,6 +31,7 @@ from market_simulator.metrics.__pure_python__.performance import (
 from market_simulator.metrics.performance import (
     calculate_all_metrics,
     calculate_max_drawdown,
+    calculate_max_drawdown_vectorized,
     calculate_profit_factor,
     calculate_sharpe_ratio,
 )
@@ -243,3 +247,46 @@ class TestAugmentedVsPurePython:
         pp = pp_calculate_all_metrics(sample_data, n)
         for a, p in zip(aug, pp, strict=True):
             assert a == pytest.approx(p, rel=1e-10)
+
+
+# ---------------------------------------------------------------------------
+# calculate_max_drawdown_vectorized
+# ---------------------------------------------------------------------------
+
+
+class TestCalculateMaxDrawdownVectorized:
+    def test_matches_scalar_simple(self):
+        """Vectorized result matches scalar on simple data."""
+        data = _arr([0.0, 50.0, 100.0, 80.0, 90.0])
+        scalar = calculate_max_drawdown(data, len(data))
+        vec = calculate_max_drawdown_vectorized(data)
+        assert vec[0] == pytest.approx(scalar[0])
+        assert vec[1] == pytest.approx(scalar[1])
+
+    def test_matches_scalar_random(self):
+        """Vectorized result matches scalar on random walk data."""
+        rng = np.random.default_rng(42)
+        data = np.cumsum(rng.normal(0.5, 2.0, 500)).astype(np.float64)
+        scalar = calculate_max_drawdown(data, len(data))
+        vec = calculate_max_drawdown_vectorized(data)
+        assert vec[0] == pytest.approx(scalar[0], rel=1e-10)
+        assert vec[1] == pytest.approx(scalar[1], rel=1e-10)
+
+    def test_empty(self):
+        data = _arr([])
+        assert calculate_max_drawdown_vectorized(data) == (0.0, 0.0)
+
+    def test_monotonic_increase(self):
+        data = _arr([1.0, 2.0, 3.0, 4.0])
+        dd, dd_pct = calculate_max_drawdown_vectorized(data)
+        assert dd == 0.0
+        assert dd_pct == 0.0
+
+    def test_augmented_vs_pure_python(self):
+        """Augmented and pure-python vectorized produce identical results."""
+        rng = np.random.default_rng(77)
+        data = np.cumsum(rng.normal(0.0, 3.0, 300)).astype(np.float64)
+        aug = calculate_max_drawdown_vectorized(data)
+        pp = pp_calculate_max_drawdown_vectorized(data)
+        assert aug[0] == pytest.approx(pp[0], rel=1e-10)
+        assert aug[1] == pytest.approx(pp[1], rel=1e-10)

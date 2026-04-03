@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 
 import cython
+import numpy as np
 
 
 @cython.ccall
@@ -53,6 +54,39 @@ def calculate_max_drawdown(pnl_series: cython.double[:], n: cython.int) -> tuple
             dd_pct = dd / peak
             if dd_pct > max_dd_pct:
                 max_dd_pct = dd_pct
+
+    return max_dd, max_dd_pct
+
+
+@cython.ccall
+def calculate_max_drawdown_vectorized(
+    cumulative_returns: cython.double[:],
+) -> tuple:
+    """Calculate max drawdown using NumPy vectorized operations.
+
+    Faster than the scalar loop for large arrays.  Uses
+    ``np.maximum.accumulate`` for peak tracking.
+
+    Args:
+        cumulative_returns: Cumulative P&L values as a typed memoryview.
+
+    Returns:
+        (max_drawdown_abs, max_drawdown_pct)
+    """
+    arr = np.asarray(cumulative_returns)
+    if len(arr) == 0:
+        return 0.0, 0.0
+
+    peak = np.maximum.accumulate(arr)
+    drawdown = peak - arr
+
+    max_dd: cython.double = float(np.max(drawdown))
+
+    # Percentage drawdown only where peak > 0
+    positive_peak = peak.copy()
+    positive_peak[positive_peak <= 0.0] = np.inf  # avoid division, result will be 0
+    dd_pct = drawdown / positive_peak
+    max_dd_pct: cython.double = float(np.max(dd_pct))
 
     return max_dd, max_dd_pct
 

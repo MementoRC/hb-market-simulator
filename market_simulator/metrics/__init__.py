@@ -8,6 +8,7 @@ compilation; a plain-Python fallback lives under ``__pure_python__/``.
 from market_simulator.metrics.performance import (
     calculate_all_metrics,
     calculate_max_drawdown,
+    calculate_max_drawdown_vectorized,
     calculate_profit_factor,
     calculate_sharpe_ratio,
 )
@@ -15,6 +16,7 @@ from market_simulator.metrics.performance import (
 __all__ = [
     "calculate_all_metrics",
     "calculate_max_drawdown",
+    "calculate_max_drawdown_vectorized",
     "calculate_profit_factor",
     "calculate_sharpe_ratio",
 ]

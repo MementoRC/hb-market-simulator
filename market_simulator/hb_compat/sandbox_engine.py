@@ -301,10 +301,7 @@ class SandboxEngine:
             flows = [f for _, f in filled_orders]
 
             # Build cumulative P&L series
-            cumulative = np.empty(len(flows), dtype=np.float64)
-            cumulative[0] = flows[0]
-            for i in range(1, len(flows)):
-                cumulative[i] = cumulative[i - 1] + flows[i]
+            cumulative = np.cumsum(np.array(flows, dtype=np.float64))
 
             total_pnl = Decimal(str(cumulative[-1]))
 
