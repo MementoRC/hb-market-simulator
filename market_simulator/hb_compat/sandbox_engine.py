@@ -17,6 +17,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+import numpy as np
+
 from market_simulator.core.clock import SimulatedClock
 from market_simulator.hb_compat.simulated_connector import SimulatedConnector
 from market_simulator.replay.replay_source import ReplayDataSource, apply_replay_event
@@ -66,6 +68,15 @@ class SimulationResult:
     orders_placed: int
     orders_filled: int
     orders_cancelled: int
+
+    # Performance metrics
+    max_drawdown: Decimal = Decimal("0")
+    max_drawdown_pct: float = 0.0
+    sharpe_ratio: float = 0.0
+    profit_factor: float = 0.0
+    total_pnl: Decimal = Decimal("0")
+    win_rate: float = 0.0
+    total_trades: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -246,11 +257,15 @@ class SandboxEngine:
             self._replay_cursors[exchange_name] = timestamp
 
     def _build_result(self, start: float, end: float, ticks: int) -> SimulationResult:
-        """Collect final simulation state."""
-        final_balances = {}
+        """Collect final simulation state and compute performance metrics."""
+        from market_simulator.core.types import OrderStatus, TradeType
+        from market_simulator.metrics.performance import calculate_all_metrics
+
+        final_balances: dict[str, dict[str, Decimal]] = {}
         total_orders = 0
         total_filled = 0
         total_cancelled = 0
+        filled_orders: list[tuple[float, float]] = []  # (timestamp, quote_pnl)
 
         for name, connector in self._connectors.items():
             final_balances[name] = connector.sim_exchange.balance_manager.get_all_balances()
@@ -258,12 +273,50 @@ class SandboxEngine:
             tracker = connector.sim_exchange.order_tracker
             for order in tracker.all_orders.values():
                 total_orders += 1
-                from market_simulator.core.types import OrderStatus
-
                 if order.status == OrderStatus.FILLED:
                     total_filled += 1
+                    # Quote-currency flow: SELL = +revenue, BUY = -cost
+                    notional = float(order.filled_price * order.filled_amount)
+                    fee = float(order.fee_paid)
+                    if order.trade_type == TradeType.SELL:
+                        quote_flow = notional - fee
+                    else:
+                        quote_flow = -notional - fee
+                    filled_orders.append((order.last_update_timestamp, quote_flow))
                 elif order.status == OrderStatus.CANCELLED:
                     total_cancelled += 1
+
+        # Compute performance metrics from chronological trade flows
+        max_drawdown = Decimal("0")
+        max_drawdown_pct = 0.0
+        sharpe_ratio = 0.0
+        profit_factor = 0.0
+        total_pnl = Decimal("0")
+        win_rate = 0.0
+        total_trades = total_filled
+
+        if filled_orders:
+            # Sort by timestamp for cumulative P&L series
+            filled_orders.sort(key=lambda t: t[0])
+            flows = [f for _, f in filled_orders]
+
+            # Build cumulative P&L series
+            cumulative = np.empty(len(flows), dtype=np.float64)
+            cumulative[0] = flows[0]
+            for i in range(1, len(flows)):
+                cumulative[i] = cumulative[i - 1] + flows[i]
+
+            total_pnl = Decimal(str(cumulative[-1]))
+
+            if len(cumulative) >= 2:
+                dd, dd_pct, sharpe_ratio, profit_factor = calculate_all_metrics(
+                    cumulative, len(cumulative)
+                )
+                max_drawdown = Decimal(str(dd))
+                max_drawdown_pct = dd_pct
+
+            wins = sum(1 for f in flows if f > 0.0)
+            win_rate = wins / len(flows) if flows else 0.0
 
         return SimulationResult(
             start_time=start,
@@ -274,4 +327,11 @@ class SandboxEngine:
             orders_placed=total_orders,
             orders_filled=total_filled,
             orders_cancelled=total_cancelled,
+            max_drawdown=max_drawdown,
+            max_drawdown_pct=max_drawdown_pct,
+            sharpe_ratio=sharpe_ratio,
+            profit_factor=profit_factor,
+            total_pnl=total_pnl,
+            win_rate=win_rate,
+            total_trades=total_trades,
         )
