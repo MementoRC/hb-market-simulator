@@ -76,14 +76,12 @@ class TestSimulatedConnectorIsExchangePyBase:
 
 
 class TestSimulatedConnectorBalances:
-    @pytest.mark.asyncio
     async def test_update_balances(self):
         connector = _make_connector()
         await connector._update_balances()
         assert connector.get_balance("USDT") == Decimal("100000")
         assert connector.get_balance("BTC") == Decimal("10")
 
-    @pytest.mark.asyncio
     async def test_available_balances(self):
         connector = _make_connector()
         await connector._update_balances()
@@ -91,7 +89,6 @@ class TestSimulatedConnectorBalances:
 
 
 class TestSimulatedConnectorTradingRules:
-    @pytest.mark.asyncio
     async def test_update_trading_rules(self):
         connector = _make_connector()
         await connector._update_trading_rules()
@@ -99,7 +96,6 @@ class TestSimulatedConnectorTradingRules:
 
 
 class TestSimulatedConnectorOrderPlacement:
-    @pytest.mark.asyncio
     async def test_place_order(self):
         connector = _make_connector()
         await connector._update_balances()
@@ -117,7 +113,6 @@ class TestSimulatedConnectorOrderPlacement:
         assert exchange_order_id.startswith("SIMEX-")
         assert isinstance(timestamp, float)
 
-    @pytest.mark.asyncio
     async def test_place_cancel(self):
         connector = _make_connector()
         await connector._update_balances()
