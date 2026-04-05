@@ -20,11 +20,21 @@ class OrderType(Enum):
     LIMIT = "LIMIT"
     LIMIT_MAKER = "LIMIT_MAKER"
     STOP_LOSS = "STOP_LOSS"
+    STOP_LOSS_LIMIT = "STOP_LOSS_LIMIT"
     TAKE_PROFIT = "TAKE_PROFIT"
+    TAKE_PROFIT_LIMIT = "TAKE_PROFIT_LIMIT"
     TRAILING_STOP = "TRAILING_STOP"
 
+    @property
     def is_conditional(self) -> bool:
-        return self in (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT, OrderType.TRAILING_STOP)
+        """Return True if this order type requires a trigger condition before execution."""
+        return self in (
+            OrderType.STOP_LOSS,
+            OrderType.STOP_LOSS_LIMIT,
+            OrderType.TAKE_PROFIT,
+            OrderType.TAKE_PROFIT_LIMIT,
+            OrderType.TRAILING_STOP,
+        )
 
 
 class TradeType(Enum):
@@ -115,13 +125,14 @@ class InFlightOrder:
     last_update_timestamp: float = 0.0
     position_action: PositionAction = PositionAction.NIL
     exchange_order_id: str | None = None
+    # Conditional order fields (populated for STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, etc.)
     trigger_price: Decimal | None = None
     trail_amount: Decimal | None = None
     watermark: Decimal | None = None
 
     @property
     def is_conditional(self) -> bool:
-        return self.order_type.is_conditional()
+        return self.order_type.is_conditional
 
     @property
     def is_open(self) -> bool:
