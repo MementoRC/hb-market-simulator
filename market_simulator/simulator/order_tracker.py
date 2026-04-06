@@ -41,7 +41,25 @@ class OrderTracker:
         trigger_price: Decimal | None = None,
         trail_amount: Decimal | None = None,
     ) -> InFlightOrder:
-        """Create and track a new order."""
+        """Create and track a new order.
+
+        :param trading_pair: Market trading pair symbol (e.g. "BTC-USDT").
+        :param order_type: Order type — includes conditional variants such as
+            STOP_LOSS, TAKE_PROFIT, and TRAILING_STOP.
+        :param trade_type: BUY or SELL.
+        :param amount: Order quantity in base currency.
+        :param price: Limit price (used for LIMIT variants and collateral
+            locking on conditional orders).
+        :param timestamp: Creation timestamp in seconds.
+        :param position_action: OPEN, CLOSE, or NIL for perpetual markets.
+        :param client_order_id: Optional caller-supplied order ID. If None,
+            a unique ID is generated automatically.
+        :param trigger_price: The price level that activates a conditional
+            order (STOP_LOSS, TAKE_PROFIT, STOP_LOSS_LIMIT,
+            TAKE_PROFIT_LIMIT, TRAILING_STOP).
+        :param trail_amount: The trailing offset for TRAILING_STOP orders.
+        :return: The newly created InFlightOrder.
+        """
         order_id = client_order_id or self.generate_order_id()
         order = InFlightOrder(
             client_order_id=order_id,
@@ -90,15 +108,6 @@ class OrderTracker:
         return None
 
     @property
-    def conditional_orders(self) -> dict[str, InFlightOrder]:
-        """Return all open conditional orders."""
-        return {
-            oid: order
-            for oid, order in self._orders.items()
-            if order.is_conditional and order.is_open
-        }
-
-    @property
     def open_orders(self) -> list[InFlightOrder]:
         """Get all currently open orders."""
         return [o for o in self._orders.values() if o.is_open]
@@ -110,6 +119,16 @@ class OrderTracker:
     @property
     def open_sell_orders(self) -> list[InFlightOrder]:
         return [o for o in self.open_orders if o.trade_type == TradeType.SELL]
+
+    @property
+    def conditional_orders(self) -> list[InFlightOrder]:
+        """Get all open orders with a conditional order type (stop-loss, take-profit, etc.)."""
+        return [o for o in self.open_orders if o.order_type.is_conditional]
+
+    @property
+    def non_conditional_orders(self) -> list[InFlightOrder]:
+        """Get all open orders that are NOT conditional (MARKET, LIMIT, LIMIT_MAKER)."""
+        return [o for o in self.open_orders if not o.order_type.is_conditional]
 
     @property
     def all_orders(self) -> dict[str, InFlightOrder]:
