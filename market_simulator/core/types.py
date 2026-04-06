@@ -128,6 +128,11 @@ class InFlightOrder:
     # Conditional order fields (populated for STOP_LOSS, TAKE_PROFIT, TRAILING_STOP, etc.)
     trigger_price: Decimal | None = None
     trail_amount: Decimal | None = None
+    watermark: Decimal | None = None
+
+    @property
+    def is_conditional(self) -> bool:
+        return self.order_type.is_conditional
 
     @property
     def is_open(self) -> bool:
