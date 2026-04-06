@@ -7,7 +7,6 @@ application, incremental diffs, and trade impact.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
 from market_simulator.core.types import PriceType, TradeType
 
@@ -23,28 +22,28 @@ class SimulatedOrderBook:
         self._trading_pair = trading_pair
         self._bids: dict[Decimal, Decimal] = {}  # price -> quantity
         self._asks: dict[Decimal, Decimal] = {}  # price -> quantity
-        self._last_trade_price: Optional[Decimal] = None
-        self._sorted_bids_cache: Optional[list[tuple[Decimal, Decimal]]] = None
-        self._sorted_asks_cache: Optional[list[tuple[Decimal, Decimal]]] = None
+        self._last_trade_price: Decimal | None = None
+        self._sorted_bids_cache: list[tuple[Decimal, Decimal]] | None = None
+        self._sorted_asks_cache: list[tuple[Decimal, Decimal]] | None = None
 
     @property
     def trading_pair(self) -> str:
         return self._trading_pair
 
     @property
-    def best_bid(self) -> Optional[Decimal]:
+    def best_bid(self) -> Decimal | None:
         if not self._bids:
             return None
         return max(self._bids.keys())
 
     @property
-    def best_ask(self) -> Optional[Decimal]:
+    def best_ask(self) -> Decimal | None:
         if not self._asks:
             return None
         return min(self._asks.keys())
 
     @property
-    def mid_price(self) -> Optional[Decimal]:
+    def mid_price(self) -> Decimal | None:
         bid = self.best_bid
         ask = self.best_ask
         if bid is not None and ask is not None:
@@ -52,7 +51,7 @@ class SimulatedOrderBook:
         return None
 
     @property
-    def spread(self) -> Optional[Decimal]:
+    def spread(self) -> Decimal | None:
         bid = self.best_bid
         ask = self.best_ask
         if bid is not None and ask is not None:
@@ -60,7 +59,7 @@ class SimulatedOrderBook:
         return None
 
     @property
-    def last_trade_price(self) -> Optional[Decimal]:
+    def last_trade_price(self) -> Decimal | None:
         return self._last_trade_price
 
     def get_price_by_type(self, price_type: PriceType) -> Decimal:
@@ -163,9 +162,7 @@ class SimulatedOrderBook:
         else:
             return self._sorted_asks[:levels]
 
-    def get_volume_for_price_move(
-        self, side: TradeType, price_limit: Decimal
-    ) -> Decimal:
+    def get_volume_for_price_move(self, side: TradeType, price_limit: Decimal) -> Decimal:
         """Calculate total volume available up to a price limit.
 
         Args:
@@ -188,7 +185,7 @@ class SimulatedOrderBook:
                 total += qty
         return total
 
-    def get_vwap(self, side: TradeType, amount: Decimal) -> Optional[Decimal]:
+    def get_vwap(self, side: TradeType, amount: Decimal) -> Decimal | None:
         """Calculate volume-weighted average price for a given order size.
 
         Args:
@@ -214,9 +211,7 @@ class SimulatedOrderBook:
     @property
     def _sorted_bids(self) -> list[tuple[Decimal, Decimal]]:
         if self._sorted_bids_cache is None:
-            self._sorted_bids_cache = sorted(
-                self._bids.items(), key=lambda x: x[0], reverse=True
-            )
+            self._sorted_bids_cache = sorted(self._bids.items(), key=lambda x: x[0], reverse=True)
         return self._sorted_bids_cache
 
     @property

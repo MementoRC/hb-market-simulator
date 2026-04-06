@@ -6,20 +6,20 @@ and can be used with hummingbot's strategy_v2 infrastructure.
 
 from __future__ import annotations
 
-import asyncio
 from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+
+pytest.importorskip("hummingbot", reason="hummingbot not installed (CI-safe skip)")
+
+from hummingbot.connector.exchange_py_base import ExchangePyBase
+from hummingbot.core.data_type.common import OrderType, TradeType
+
 from market_simulator.hb_compat.simulated_connector import SimulatedConnector
 from market_simulator.simulator.exchange import SimulatedExchangeConfig
 from market_simulator.simulator.fee_model import FlatFeeModel, ZeroFeeModel
 from market_simulator.simulator.matching_engine import ImmediateFillEngine
-
-from hummingbot.connector.exchange_py_base import ExchangePyBase
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState
-from hummingbot.core.event.events import MarketEvent
 
 
 def _make_connector(
@@ -76,14 +76,12 @@ class TestSimulatedConnectorIsExchangePyBase:
 
 
 class TestSimulatedConnectorBalances:
-    @pytest.mark.asyncio
     async def test_update_balances(self):
         connector = _make_connector()
         await connector._update_balances()
         assert connector.get_balance("USDT") == Decimal("100000")
         assert connector.get_balance("BTC") == Decimal("10")
 
-    @pytest.mark.asyncio
     async def test_available_balances(self):
         connector = _make_connector()
         await connector._update_balances()
@@ -91,7 +89,6 @@ class TestSimulatedConnectorBalances:
 
 
 class TestSimulatedConnectorTradingRules:
-    @pytest.mark.asyncio
     async def test_update_trading_rules(self):
         connector = _make_connector()
         await connector._update_trading_rules()
@@ -99,7 +96,6 @@ class TestSimulatedConnectorTradingRules:
 
 
 class TestSimulatedConnectorOrderPlacement:
-    @pytest.mark.asyncio
     async def test_place_order(self):
         connector = _make_connector()
         await connector._update_balances()
@@ -117,7 +113,6 @@ class TestSimulatedConnectorOrderPlacement:
         assert exchange_order_id.startswith("SIMEX-")
         assert isinstance(timestamp, float)
 
-    @pytest.mark.asyncio
     async def test_place_cancel(self):
         connector = _make_connector()
         await connector._update_balances()
@@ -125,6 +120,7 @@ class TestSimulatedConnectorOrderPlacement:
 
         # Place a limit order on the sim exchange
         from market_simulator.core.types import OrderType as SimOrderType
+
         sim_order_id = connector.sim_exchange.buy(
             "BTC-USDT", Decimal("0.1"), SimOrderType.LIMIT, Decimal("49000")
         )
@@ -145,10 +141,12 @@ class TestSimulatedConnectorFees:
         assert fee.percent == Decimal("0")
 
     def test_flat_fee(self):
-        connector = _make_connector(fee_model=FlatFeeModel(
-            maker_rate=Decimal("0.0005"),
-            taker_rate=Decimal("0.001"),
-        ))
+        connector = _make_connector(
+            fee_model=FlatFeeModel(
+                maker_rate=Decimal("0.0005"),
+                taker_rate=Decimal("0.001"),
+            )
+        )
         # Taker fee for market order
         fee = connector._get_fee("BTC", "USDT", OrderType.MARKET, TradeType.BUY, Decimal("1"))
         assert fee.percent == Decimal("0.001")

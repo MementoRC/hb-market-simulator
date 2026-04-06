@@ -85,8 +85,12 @@ class TestOrderTracker:
 
     def test_open_orders(self):
         tracker = self._make_tracker()
-        o1 = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000"))
-        o2 = tracker.create_order("ETH-USDT", OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("3000"))
+        o1 = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000")
+        )
+        o2 = tracker.create_order(
+            "ETH-USDT", OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("3000")
+        )
         tracker.open_order(o1.client_order_id)
         tracker.open_order(o2.client_order_id)
         tracker.cancel_order(o2.client_order_id)
@@ -97,8 +101,12 @@ class TestOrderTracker:
 
     def test_open_buy_sell_orders(self):
         tracker = self._make_tracker()
-        buy = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000"))
-        sell = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.SELL, Decimal("1"), Decimal("55000"))
+        buy = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000")
+        )
+        sell = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.SELL, Decimal("1"), Decimal("55000")
+        )
         tracker.open_order(buy.client_order_id)
         tracker.open_order(sell.client_order_id)
 
@@ -107,8 +115,12 @@ class TestOrderTracker:
 
     def test_in_flight_orders(self):
         tracker = self._make_tracker()
-        o1 = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000"))
-        o2 = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("49000"))
+        o1 = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000")
+        )
+        o2 = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("49000")
+        )
         tracker.open_order(o1.client_order_id)
         tracker.open_order(o2.client_order_id)
         tracker.cancel_order(o2.client_order_id)
@@ -119,8 +131,12 @@ class TestOrderTracker:
 
     def test_cleanup_done_orders(self):
         tracker = self._make_tracker()
-        o1 = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000"))
-        o2 = tracker.create_order("BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("49000"))
+        o1 = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("50000")
+        )
+        o2 = tracker.create_order(
+            "BTC-USDT", OrderType.LIMIT, TradeType.BUY, Decimal("1"), Decimal("49000")
+        )
         tracker.open_order(o1.client_order_id)
         tracker.open_order(o2.client_order_id)
         tracker.cancel_order(o2.client_order_id)
@@ -133,8 +149,11 @@ class TestOrderTracker:
     def test_custom_order_id(self):
         tracker = self._make_tracker()
         order = tracker.create_order(
-            "BTC-USDT", OrderType.LIMIT, TradeType.BUY,
-            Decimal("1"), Decimal("50000"),
+            "BTC-USDT",
+            OrderType.LIMIT,
+            TradeType.BUY,
+            Decimal("1"),
+            Decimal("50000"),
             client_order_id="my-custom-id",
         )
         assert order.client_order_id == "my-custom-id"

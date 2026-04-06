@@ -8,9 +8,10 @@ The hb_compat layer wraps it as a ConnectorBase-compatible object.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from market_simulator.core.events import EventBus, MarketEvent
 from market_simulator.core.types import (
@@ -28,6 +29,10 @@ from market_simulator.simulator.fee_model import FeeModel, FlatFeeModel
 from market_simulator.simulator.matching_engine import LimitOrderEngine, MatchingEngine
 from market_simulator.simulator.order_book import SimulatedOrderBook
 from market_simulator.simulator.order_tracker import OrderTracker
+from market_simulator.simulator.trigger_engine import (
+    StandardTriggerEngine,
+    TriggerEngine,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +40,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Event payload dataclasses (mirrors hummingbot event classes)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class OrderCreatedEvent:
@@ -87,22 +93,34 @@ class OrderFailureEvent:
     order_type: OrderType
 
 
+@dataclass
+class OrderTriggeredEvent:
+    timestamp: float
+    original_order_id: str
+    trading_pair: str
+    order_type: OrderType
+    trade_type: TradeType
+    trigger_price: Decimal | None
+
+
 # ---------------------------------------------------------------------------
 # Exchange configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SimulatedExchangeConfig:
     name: str = "simulated_exchange"
-    trading_pairs: List[str] = field(default_factory=list)
-    trading_rules: Dict[str, TradingRule] = field(default_factory=dict)
-    initial_balances: Dict[str, Decimal] = field(default_factory=dict)
+    trading_pairs: list[str] = field(default_factory=list)
+    trading_rules: dict[str, TradingRule] = field(default_factory=dict)
+    initial_balances: dict[str, Decimal] = field(default_factory=dict)
     is_perpetual: bool = False
 
 
 # ---------------------------------------------------------------------------
 # SimulatedExchange
 # ---------------------------------------------------------------------------
+
 
 class SimulatedExchange:
     """Pure-Python simulated exchange.
@@ -121,21 +139,23 @@ class SimulatedExchange:
         config: SimulatedExchangeConfig | None = None,
         matching_engine: MatchingEngine | None = None,
         fee_model: FeeModel | None = None,
+        trigger_engine: TriggerEngine | None = None,
     ) -> None:
         self._config = config or SimulatedExchangeConfig()
         self._name = self._config.name
         self._trading_pairs = list(self._config.trading_pairs)
 
         # Components
-        self._order_books: Dict[str, SimulatedOrderBook] = {}
+        self._order_books: dict[str, SimulatedOrderBook] = {}
         self._balance_manager = BalanceManager()
         self._matching_engine = matching_engine or LimitOrderEngine()
         self._order_tracker = OrderTracker()
         self._fee_model = fee_model or FlatFeeModel()
         self._event_bus = EventBus()
+        self._trigger_engine: TriggerEngine = trigger_engine or StandardTriggerEngine()
 
         # Trading rules
-        self._trading_rules: Dict[str, TradingRule] = dict(self._config.trading_rules)
+        self._trading_rules: dict[str, TradingRule] = dict(self._config.trading_rules)
 
         # State
         self._current_timestamp: float = 0.0
@@ -164,7 +184,7 @@ class SimulatedExchange:
         return self._name
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -176,11 +196,11 @@ class SimulatedExchange:
         self._ready = value
 
     @property
-    def trading_rules(self) -> Dict[str, TradingRule]:
+    def trading_rules(self) -> dict[str, TradingRule]:
         return self._trading_rules
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._order_tracker.in_flight_orders
 
     @property
@@ -233,10 +253,10 @@ class SimulatedExchange:
     def get_available_balance(self, currency: str) -> Decimal:
         return self._balance_manager.get_available_balance(currency)
 
-    def get_all_balances(self) -> Dict[str, Decimal]:
+    def get_all_balances(self) -> dict[str, Decimal]:
         return self._balance_manager.get_all_balances()
 
-    def set_initial_balances(self, balances: Dict[str, Decimal]) -> None:
+    def set_initial_balances(self, balances: dict[str, Decimal]) -> None:
         self._balance_manager.set_initial_balances(balances)
 
     # -------------------------------------------------------------------
@@ -263,10 +283,19 @@ class SimulatedExchange:
         order_type: OrderType,
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
+        trigger_price: Decimal | None = None,
+        trail_amount: Decimal | None = None,
         **kwargs: Any,
     ) -> str:
         return self._place_order(
-            trading_pair, TradeType.BUY, order_type, amount, price, position_action
+            trading_pair,
+            TradeType.BUY,
+            order_type,
+            amount,
+            price,
+            position_action,
+            trigger_price=trigger_price,
+            trail_amount=trail_amount,
         )
 
     def sell(
@@ -276,30 +305,50 @@ class SimulatedExchange:
         order_type: OrderType,
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
+        trigger_price: Decimal | None = None,
+        trail_amount: Decimal | None = None,
         **kwargs: Any,
     ) -> str:
         return self._place_order(
-            trading_pair, TradeType.SELL, order_type, amount, price, position_action
+            trading_pair,
+            TradeType.SELL,
+            order_type,
+            amount,
+            price,
+            position_action,
+            trigger_price=trigger_price,
+            trail_amount=trail_amount,
         )
 
     def cancel(self, trading_pair: str, client_order_id: str) -> None:
         """Cancel an open order."""
-        order = self._order_tracker.cancel_order(
-            client_order_id, timestamp=self._current_timestamp
-        )
+        order = self._order_tracker.cancel_order(client_order_id, timestamp=self._current_timestamp)
         if order is None:
             logger.warning("Cannot cancel order %s: not found or already done", client_order_id)
             return
 
-        # Release locked collateral
+        # Release locked collateral.
+        # For conditional BUY orders the collateral was locked at trigger_price,
+        # so we must release the same amount.
         if order.trade_type == TradeType.BUY:
             locked_currency = order.quote_asset
-            locked_amount = order.remaining_amount * order.price
+            collateral_price = (
+                order.trigger_price
+                if (order.order_type.is_conditional and order.trigger_price is not None)
+                else order.price
+            )
+            locked_amount = order.remaining_amount * collateral_price
         else:
             locked_currency = order.base_asset
             locked_amount = order.remaining_amount
 
         self._balance_manager.apply_cancel(locked_currency, locked_amount)
+
+        # Clean up any trailing stop reference for cancelled conditional orders.
+        if order.order_type.is_conditional and isinstance(
+            self._trigger_engine, StandardTriggerEngine
+        ):
+            self._trigger_engine.clear_trailing_reference(client_order_id)
 
         self._event_bus.trigger_event(
             MarketEvent.OrderCancelled,
@@ -310,7 +359,7 @@ class SimulatedExchange:
             ),
         )
 
-    def get_in_flight_order(self, client_order_id: str) -> Optional[InFlightOrder]:
+    def get_in_flight_order(self, client_order_id: str) -> InFlightOrder | None:
         return self._order_tracker.get_order(client_order_id)
 
     # -------------------------------------------------------------------
@@ -320,11 +369,27 @@ class SimulatedExchange:
     def process_tick(self, timestamp: float) -> None:
         """Advance the exchange to the given timestamp.
 
-        Checks all open orders against the matching engine and processes fills.
+        Processing order:
+        1. Update current timestamp.
+        2. Evaluate all open conditional orders via TriggerEngine; fire any
+           that have met their trigger condition (cancel + spawn market order).
+        3. Match remaining open non-conditional orders via the MatchingEngine.
         """
         self._current_timestamp = timestamp
 
-        for order in self._order_tracker.open_orders:
+        # Step 2: Evaluate conditional orders.
+        # Snapshot the list to avoid mutation issues while iterating.
+        for order in list(self._order_tracker.conditional_orders):
+            order_book = self._order_books.get(order.trading_pair)
+            if order_book is None:
+                continue
+
+            snapshot = self._build_order_book_snapshot(order_book)
+            if self._trigger_engine.evaluate(order, snapshot, timestamp):
+                self._fire_conditional_order(order, timestamp)
+
+        # Step 3: Match non-conditional open orders.
+        for order in list(self._order_tracker.non_conditional_orders):
             order_book = self._order_books.get(order.trading_pair)
             if order_book is None:
                 continue
@@ -347,6 +412,8 @@ class SimulatedExchange:
         amount: Decimal,
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
+        trigger_price: Decimal | None = None,
+        trail_amount: Decimal | None = None,
     ) -> str:
         """Internal order placement with validation, collateral locking, and events."""
         # Quantize
@@ -355,6 +422,8 @@ class SimulatedExchange:
             amount = rule.quantize_order_amount(amount)
             if order_type != OrderType.MARKET:
                 price = rule.quantize_order_price(price)
+            if trigger_price is not None:
+                trigger_price = rule.quantize_order_price(trigger_price)
 
         # Create tracked order
         order = self._order_tracker.create_order(
@@ -365,20 +434,28 @@ class SimulatedExchange:
             price=price,
             timestamp=self._current_timestamp,
             position_action=position_action,
+            trigger_price=trigger_price,
+            trail_amount=trail_amount,
         )
 
-        # Lock collateral
+        # Lock collateral.
+        # For conditional BUY orders, lock at trigger_price * amount when a
+        # trigger_price is set (worst-case execution price); otherwise fall back
+        # to the order price.  SELL orders always lock the base amount.
         if trade_type == TradeType.BUY:
             lock_currency = trading_pair.split("-")[1]
-            lock_amount = amount * price
+            collateral_price = (
+                trigger_price
+                if (order_type.is_conditional and trigger_price is not None)
+                else price
+            )
+            lock_amount = amount * collateral_price
         else:
             lock_currency = trading_pair.split("-")[0]
             lock_amount = amount
 
         if not self._balance_manager.lock_collateral(lock_currency, lock_amount):
-            self._order_tracker.fail_order(
-                order.client_order_id, timestamp=self._current_timestamp
-            )
+            self._order_tracker.fail_order(order.client_order_id, timestamp=self._current_timestamp)
             self._event_bus.trigger_event(
                 MarketEvent.OrderFailure,
                 OrderFailureEvent(
@@ -390,9 +467,7 @@ class SimulatedExchange:
             return order.client_order_id
 
         # Transition to OPEN and emit created event
-        self._order_tracker.open_order(
-            order.client_order_id, timestamp=self._current_timestamp
-        )
+        self._order_tracker.open_order(order.client_order_id, timestamp=self._current_timestamp)
 
         event_tag = (
             MarketEvent.BuyOrderCreated
@@ -422,6 +497,105 @@ class SimulatedExchange:
 
         return order.client_order_id
 
+    def _build_order_book_snapshot(
+        self, order_book: SimulatedOrderBook
+    ) -> dict[str, Decimal | None]:
+        """Build a snapshot dict suitable for TriggerEngine.evaluate().
+
+        :param order_book: The SimulatedOrderBook for the trading pair.
+        :return: Dict with keys best_bid, best_ask, last_trade.
+        """
+        return {
+            "best_bid": order_book.best_bid,
+            "best_ask": order_book.best_ask,
+            "last_trade": order_book.last_trade_price,
+        }
+
+    def _fire_conditional_order(self, order: InFlightOrder, timestamp: float) -> None:
+        """Fire a triggered conditional order.
+
+        Steps:
+        1. Cancel the conditional order (updates status, releases collateral).
+        2. Emit OrderTriggered event.
+        3. Place a new MARKET order with the same trading_pair, amount, and
+           trade_type — the new order gets a fresh order ID.
+
+        :param order: The conditional order whose trigger condition is met.
+        :param timestamp: Current simulation timestamp.
+        """
+        original_order_id = order.client_order_id
+        trading_pair = order.trading_pair
+
+        # Step 1: Cancel the conditional order and release its locked collateral.
+        # Re-use the public cancel() path which handles collateral release and
+        # emits OrderCancelled.  However, we do NOT want an OrderCancelled event
+        # here — instead we emit OrderTriggered.  So we cancel at the tracker
+        # level directly and release collateral manually.
+        cancelled = self._order_tracker.cancel_order(original_order_id, timestamp=timestamp)
+        if cancelled is None:
+            # Already gone (race condition or double evaluation) — skip.
+            logger.warning(
+                "Attempted to fire conditional order %s but it was no longer open",
+                original_order_id,
+            )
+            return
+
+        # Release locked collateral for the cancelled conditional order.
+        if order.trade_type == TradeType.BUY:
+            locked_currency = order.quote_asset
+            collateral_price = (
+                order.trigger_price
+                if (order.order_type.is_conditional and order.trigger_price is not None)
+                else order.price
+            )
+            locked_amount = order.remaining_amount * collateral_price
+        else:
+            locked_currency = order.base_asset
+            locked_amount = order.remaining_amount
+
+        self._balance_manager.apply_cancel(locked_currency, locked_amount)
+
+        # Clean up trailing reference if the trigger engine supports it.
+        if isinstance(self._trigger_engine, StandardTriggerEngine):
+            self._trigger_engine.clear_trailing_reference(original_order_id)
+
+        # Step 2: Emit OrderTriggered event.
+        self._event_bus.trigger_event(
+            MarketEvent.OrderTriggered,
+            OrderTriggeredEvent(
+                timestamp=timestamp,
+                original_order_id=original_order_id,
+                trading_pair=trading_pair,
+                order_type=order.order_type,
+                trade_type=order.trade_type,
+                trigger_price=order.trigger_price,
+            ),
+        )
+
+        # Step 3: Place a new MARKET order for the same pair/amount/direction.
+        if order.trade_type == TradeType.BUY:
+            self.buy(
+                trading_pair=trading_pair,
+                amount=order.amount,
+                order_type=OrderType.MARKET,
+                price=Decimal("0"),  # price unused for MARKET; collateral locked at ask
+            )
+        else:
+            self.sell(
+                trading_pair=trading_pair,
+                amount=order.amount,
+                order_type=OrderType.MARKET,
+                price=Decimal("0"),
+            )
+
+        logger.debug(
+            "Fired conditional order %s (%s %s %s) → new MARKET order placed",
+            original_order_id,
+            order.order_type.value,
+            order.trade_type.value,
+            trading_pair,
+        )
+
     def _process_fill(
         self,
         order: InFlightOrder,
@@ -431,8 +605,11 @@ class SimulatedExchange:
         """Process a fill: update balance, order state, emit events."""
         # Calculate fee
         fee = self._fee_model.calculate_fee(
-            order.trading_pair, order.trade_type, order.order_type,
-            fill_amount, fill_price,
+            order.trading_pair,
+            order.trade_type,
+            order.order_type,
+            fill_amount,
+            fill_price,
         )
         fee_amount = fee.total_flat_fee
         fee_currency = order.quote_asset  # Default to quote

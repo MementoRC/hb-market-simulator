@@ -3,9 +3,15 @@
 from decimal import Decimal
 
 import pytest
+
 from market_simulator.core.events import MarketEvent
-from market_simulator.core.types import OrderStatus, OrderType, PriceType, TradeFee, TradeType, TradingRule
-from market_simulator.simulator.balance_manager import BalanceManager
+from market_simulator.core.types import (
+    OrderStatus,
+    OrderType,
+    PriceType,
+    TradeType,
+    TradingRule,
+)
 from market_simulator.simulator.exchange import (
     OrderCancelledEvent,
     OrderCompletedEvent,
@@ -16,7 +22,7 @@ from market_simulator.simulator.exchange import (
     SimulatedExchangeConfig,
 )
 from market_simulator.simulator.fee_model import FlatFeeModel, ZeroFeeModel
-from market_simulator.simulator.matching_engine import ImmediateFillEngine, LimitOrderEngine
+from market_simulator.simulator.matching_engine import ImmediateFillEngine
 
 
 def _make_exchange(
@@ -104,7 +110,7 @@ class TestMarketOrderBuy:
         ex.add_listener(MarketEvent.OrderFilled, collector)
         ex.add_listener(MarketEvent.BuyOrderCompleted, collector)
 
-        order_id = ex.buy("BTC-USDT", Decimal("1.0"), OrderType.MARKET, Decimal("0"))
+        ex.buy("BTC-USDT", Decimal("1.0"), OrderType.MARKET, Decimal("0"))
 
         # Should get Created -> Filled -> Completed
         assert len(collector.events) == 3
@@ -256,8 +262,8 @@ class TestInsufficientBalance:
 class TestMultipleOrders:
     def test_multiple_limit_orders(self):
         ex = _make_exchange()
-        id1 = ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50100"))
-        id2 = ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50200"))
+        ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50100"))
+        ex.buy("BTC-USDT", Decimal("0.5"), OrderType.LIMIT, Decimal("50200"))
 
         assert len(ex.in_flight_orders) == 2
 

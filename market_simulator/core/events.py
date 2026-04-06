@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from enum import IntEnum
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class MarketEvent(IntEnum):
     OrderFailure = 8
     OrderExpired = 9
     FundingPaymentCompleted = 10
+    OrderTriggered = 11
 
 
 class EventBus:
@@ -69,9 +71,7 @@ class EventBus:
             try:
                 listener(message)
             except Exception:
-                logger.exception(
-                    "Error in event listener for tag %s: %s", event_tag, listener
-                )
+                logger.exception("Error in event listener for tag %s: %s", event_tag, listener)
 
     def clear_all_listeners(self) -> None:
         """Remove all listeners for all event tags."""

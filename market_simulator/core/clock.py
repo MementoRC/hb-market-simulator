@@ -41,9 +41,7 @@ class SimulatedClock:
     def set_time(self, timestamp: float) -> None:
         """Jump to a specific timestamp (must be >= current)."""
         if timestamp < self._current_time:
-            raise ValueError(
-                f"Cannot set clock backwards: {timestamp} < {self._current_time}"
-            )
+            raise ValueError(f"Cannot set clock backwards: {timestamp} < {self._current_time}")
         self._current_time = timestamp
 
     def reset(self, start_time: float = 0.0) -> None:

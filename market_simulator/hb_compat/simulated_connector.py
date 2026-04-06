@@ -12,36 +12,39 @@ and OrderUpdate objects and it fires the correct MarketEvent events.
 from __future__ import annotations
 
 import asyncio
-import math
-import uuid
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
+from hummingbot.connector.exchange_py_base import ExchangePyBase
+from hummingbot.connector.trading_rule import TradingRule
+from hummingbot.core.data_type.common import OrderType, TradeType
+from hummingbot.core.data_type.in_flight_order import (
+    InFlightOrder,
+    OrderState,
+    OrderUpdate,
+    TradeUpdate,
+)
+from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
+from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
+from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
+from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from market_simulator.core.events import MarketEvent as SimMarketEvent
 from market_simulator.core.types import (
     OrderType as SimOrderType,
-    PriceType as SimPriceType,
+)
+from market_simulator.core.types import (
     TradeType as SimTradeType,
-    TradingRule as SimTradingRule,
 )
 from market_simulator.simulator.exchange import (
-    OrderCompletedEvent,
     OrderFilledEvent,
+    OrderTriggeredEvent,
     SimulatedExchange,
     SimulatedExchangeConfig,
 )
 from market_simulator.simulator.fee_model import FeeModel, FlatFeeModel, ZeroFeeModel
 from market_simulator.simulator.matching_engine import LimitOrderEngine, MatchingEngine
-
-from hummingbot.connector.exchange_py_base import ExchangePyBase
-from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
-from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 # ---------------------------------------------------------------------------
 # Type mapping helpers
@@ -51,6 +54,12 @@ _HB_TO_SIM_ORDER_TYPE = {
     OrderType.MARKET: SimOrderType.MARKET,
     OrderType.LIMIT: SimOrderType.LIMIT,
     OrderType.LIMIT_MAKER: SimOrderType.LIMIT_MAKER,
+    # Conditional order types: hummingbot's OrderType does not define these
+    # variants, so callers must pass SimOrderType directly.  The identity
+    # entries below make _place_order() work uniformly for both cases.
+    SimOrderType.STOP_LOSS: SimOrderType.STOP_LOSS,
+    SimOrderType.TAKE_PROFIT: SimOrderType.TAKE_PROFIT,
+    SimOrderType.TRAILING_STOP: SimOrderType.TRAILING_STOP,
 }
 
 _HB_TO_SIM_TRADE_TYPE = {
@@ -63,16 +72,19 @@ _HB_TO_SIM_TRADE_TYPE = {
 # Stub data sources (no network activity)
 # ---------------------------------------------------------------------------
 
+
 class _StubOrderBookDataSource(OrderBookTrackerDataSource):
     """Minimal stub — order book data comes from the SimulatedExchange."""
 
-    def __init__(self, trading_pairs: List[str]):
+    def __init__(self, trading_pairs: list[str]):
         super().__init__(trading_pairs)
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(
+        self, trading_pairs: list[str], domain: str | None = None
+    ) -> dict[str, float]:
         return {pair: 0.0 for pair in trading_pairs}
 
-    async def get_new_order_book_dict(self, trading_pair: str) -> Dict[str, Any]:
+    async def get_new_order_book_dict(self, trading_pair: str) -> dict[str, Any]:
         return {"trading_pair": trading_pair, "bids": [], "asks": [], "update_id": 0}
 
     async def listen_for_subscriptions(self):
@@ -104,6 +116,7 @@ class _StubUserStreamDataSource(UserStreamTrackerDataSource):
     def last_recv_time(self) -> float:
         # Return current time so is_user_stream_initialized returns True
         import time
+
         return time.time()
 
     async def listen_for_user_stream(self, output):
@@ -121,6 +134,7 @@ class _StubWebAssistantsFactory(WebAssistantsFactory):
 # ---------------------------------------------------------------------------
 # SimulatedConnector
 # ---------------------------------------------------------------------------
+
 
 class SimulatedConnector(ExchangePyBase):
     """ExchangePyBase-compatible connector backed by SimulatedExchange.
@@ -154,9 +168,9 @@ class SimulatedConnector(ExchangePyBase):
         self._exchange_order_id_counter = 0
 
         # Wire up sim exchange fill events to feed ClientOrderTracker
-        self._sim_exchange.add_listener(
-            SimMarketEvent.OrderFilled, self._on_sim_fill
-        )
+        self._sim_exchange.add_listener(SimMarketEvent.OrderFilled, self._on_sim_fill)
+        # Wire up conditional order trigger events
+        self._sim_exchange.add_listener(SimMarketEvent.OrderTriggered, self._on_sim_triggered)
 
         # ExchangePyBase.__init__(balance_asset_limit, rate_limits_share_pct)
         # calls abstract properties immediately, so they must be ready above
@@ -175,7 +189,7 @@ class SimulatedConnector(ExchangePyBase):
         return None
 
     @property
-    def rate_limits_rules(self) -> List:
+    def rate_limits_rules(self) -> list:
         return []
 
     @property
@@ -203,7 +217,7 @@ class SimulatedConnector(ExchangePyBase):
         return ""
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._sim_trading_pairs
 
     @property
@@ -218,16 +232,31 @@ class SimulatedConnector(ExchangePyBase):
     # Abstract methods (required by ExchangePyBase)
     # -------------------------------------------------------------------
 
-    def supported_order_types(self) -> List[OrderType]:
-        return [OrderType.MARKET, OrderType.LIMIT, OrderType.LIMIT_MAKER]
+    def supported_order_types(self) -> list[OrderType]:
+        return [
+            OrderType.MARKET,
+            OrderType.LIMIT,
+            OrderType.LIMIT_MAKER,
+            # Conditional types are SimOrderType values; callers that are
+            # aware of the simulator can pass these directly to _place_order.
+            SimOrderType.STOP_LOSS,
+            SimOrderType.TAKE_PROFIT,
+            SimOrderType.TRAILING_STOP,
+        ]
 
-    def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception) -> bool:
+    def _is_request_exception_related_to_time_synchronizer(
+        self, request_exception: Exception
+    ) -> bool:
         return False
 
-    def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
+    def _is_order_not_found_during_status_update_error(
+        self, status_update_exception: Exception
+    ) -> bool:
         return False
 
-    def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
+    def _is_order_not_found_during_cancelation_error(
+        self, cancelation_exception: Exception
+    ) -> bool:
         return False
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
@@ -239,10 +268,10 @@ class SimulatedConnector(ExchangePyBase):
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
         return _StubUserStreamDataSource()
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         return []
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         pass
 
     # -------------------------------------------------------------------
@@ -258,22 +287,35 @@ class SimulatedConnector(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         """Place order on simulated exchange, return (exchange_order_id, timestamp)."""
         self._exchange_order_id_counter += 1
         exchange_order_id = f"SIMEX-{self._exchange_order_id_counter:08d}"
 
-        sim_trade_type = _HB_TO_SIM_TRADE_TYPE[trade_type]
         sim_order_type = _HB_TO_SIM_ORDER_TYPE[order_type]
+
+        # Extract conditional order parameters forwarded from strategy callers.
+        trigger_price: Decimal | None = kwargs.get("trigger_price")
+        trail_amount: Decimal | None = kwargs.get("trail_amount")
 
         # Place on sim exchange (synchronous)
         if trade_type == TradeType.BUY:
             self._sim_exchange.buy(
-                trading_pair, amount, sim_order_type, price,
+                trading_pair,
+                amount,
+                sim_order_type,
+                price,
+                trigger_price=trigger_price,
+                trail_amount=trail_amount,
             )
         else:
             self._sim_exchange.sell(
-                trading_pair, amount, sim_order_type, price,
+                trading_pair,
+                amount,
+                sim_order_type,
+                price,
+                trigger_price=trigger_price,
+                trail_amount=trail_amount,
             )
 
         timestamp = self._sim_exchange.current_timestamp
@@ -281,9 +323,7 @@ class SimulatedConnector(ExchangePyBase):
 
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder) -> bool:
         """Cancel order on simulated exchange."""
-        self._sim_exchange.cancel(
-            tracked_order.trading_pair, order_id
-        )
+        self._sim_exchange.cancel(tracked_order.trading_pair, order_id)
         return True
 
     # -------------------------------------------------------------------
@@ -298,7 +338,7 @@ class SimulatedConnector(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = Decimal("NaN"),
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
         """Calculate fee using the sim exchange's fee model."""
         if isinstance(self._sim_fee_model, ZeroFeeModel):
@@ -358,7 +398,7 @@ class SimulatedConnector(ExchangePyBase):
     # Order status (handled by sim exchange events, no polling needed)
     # -------------------------------------------------------------------
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         return []  # Fills are pushed via _on_sim_fill, no polling
 
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
@@ -374,6 +414,7 @@ class SimulatedConnector(ExchangePyBase):
             )
 
         from market_simulator.core.types import OrderStatus as SimOrderStatus
+
         state_map = {
             SimOrderStatus.PENDING_CREATE: OrderState.PENDING_CREATE,
             SimOrderStatus.OPEN: OrderState.OPEN,
@@ -425,7 +466,9 @@ class SimulatedConnector(ExchangePyBase):
             percent=fill_event.trade_fee.percent if fill_event.trade_fee else Decimal("0"),
             flat_fees=[
                 TokenAmount(token=currency, amount=amount)
-                for currency, amount in (fill_event.trade_fee.flat_fees if fill_event.trade_fee else [])
+                for currency, amount in (
+                    fill_event.trade_fee.flat_fees if fill_event.trade_fee else []
+                )
             ],
         )
 
@@ -446,7 +489,12 @@ class SimulatedConnector(ExchangePyBase):
         sim_order = self._sim_exchange.get_in_flight_order(fill_event.order_id)
         if sim_order and sim_order.is_done:
             from market_simulator.core.types import OrderStatus as SimOrderStatus
-            state = OrderState.FILLED if sim_order.status == SimOrderStatus.FILLED else OrderState.CANCELED
+
+            state = (
+                OrderState.FILLED
+                if sim_order.status == SimOrderStatus.FILLED
+                else OrderState.CANCELED
+            )
             order_update = OrderUpdate(
                 trading_pair=fill_event.trading_pair,
                 update_timestamp=fill_event.timestamp,
@@ -455,6 +503,27 @@ class SimulatedConnector(ExchangePyBase):
                 exchange_order_id=tracked_order.exchange_order_id or "",
             )
             self._order_tracker.process_order_update(order_update)
+
+    def _on_sim_triggered(self, triggered_event: OrderTriggeredEvent) -> None:
+        """Called when SimulatedExchange fires a conditional order.
+
+        The sim exchange has already cancelled the original conditional order
+        and placed a new MARKET order internally.  Here we emit an
+        OrderUpdate(CANCELED) for the original tracked order so that
+        ClientOrderTracker and any attached strategy are kept in sync.
+        """
+        tracked_order = self._order_tracker.fetch_tracked_order(triggered_event.original_order_id)
+        if tracked_order is None:
+            return
+
+        order_update = OrderUpdate(
+            trading_pair=triggered_event.trading_pair,
+            update_timestamp=triggered_event.timestamp,
+            new_state=OrderState.CANCELED,
+            client_order_id=triggered_event.original_order_id,
+            exchange_order_id=tracked_order.exchange_order_id or "",
+        )
+        self._order_tracker.process_order_update(order_update)
 
     # -------------------------------------------------------------------
     # Access to underlying sim exchange

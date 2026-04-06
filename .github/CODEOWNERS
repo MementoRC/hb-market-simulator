@@ -1,0 +1,10 @@
+* @MementoRC
+/market_simulator/core/ @MementoRC
+/market_simulator/simulator/ @MementoRC
+/market_simulator/hb_compat/ @MementoRC
+/market_simulator/replay/ @MementoRC
+/market_simulator/protocols/ @MementoRC
+/tests/ @MementoRC
+/.github/ @MementoRC
+/pyproject.toml @MementoRC
+/docs/ @MementoRC

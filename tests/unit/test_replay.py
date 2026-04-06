@@ -1,10 +1,10 @@
 """Tests for the replay system: data loading, replay source, event application."""
 
-import tempfile
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
+
 from market_simulator.core.types import TradeType
 from market_simulator.replay.data_loader import (
     auto_load,
@@ -19,6 +19,7 @@ from market_simulator.simulator.order_book import SimulatedOrderBook
 # ---------------------------------------------------------------------------
 # Fixtures: temporary CSV files
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def trades_csv(tmp_path) -> Path:
@@ -61,6 +62,7 @@ def order_book_csv(tmp_path) -> Path:
 # ---------------------------------------------------------------------------
 # Data loader tests
 # ---------------------------------------------------------------------------
+
 
 class TestLoadTradesCsv:
     def test_load(self, trades_csv):
@@ -131,6 +133,7 @@ class TestAutoLoad:
 # ReplayDataSource tests
 # ---------------------------------------------------------------------------
 
+
 class TestReplayDataSource:
     def test_add_trades(self, trades_csv):
         trades = load_trades_csv(trades_csv)
@@ -178,7 +181,9 @@ class TestReplayDataSource:
         # 2 candles + 2 synthetic order book snapshots = 4 events
         assert source.event_count == 4
 
-        ob_events = [e for e in source.events() if e.event_type == ReplayEventType.ORDER_BOOK_SNAPSHOT]
+        ob_events = [
+            e for e in source.events() if e.event_type == ReplayEventType.ORDER_BOOK_SNAPSHOT
+        ]
         assert len(ob_events) == 2
 
         # Check synthetic book has bids and asks
@@ -197,18 +202,23 @@ class TestReplayDataSource:
 # apply_replay_event tests
 # ---------------------------------------------------------------------------
 
+
 class TestApplyReplayEvent:
     def test_apply_snapshot(self):
         book = SimulatedOrderBook("BTC-USDT")
         books = {"BTC-USDT": book}
 
         source = ReplayDataSource()
-        source.add_order_book_snapshots([{
-            "timestamp": 1000.0,
-            "trading_pair": "BTC-USDT",
-            "bids": [(Decimal("50000"), Decimal("1.0"))],
-            "asks": [(Decimal("50100"), Decimal("1.0"))],
-        }])
+        source.add_order_book_snapshots(
+            [
+                {
+                    "timestamp": 1000.0,
+                    "trading_pair": "BTC-USDT",
+                    "bids": [(Decimal("50000"), Decimal("1.0"))],
+                    "asks": [(Decimal("50100"), Decimal("1.0"))],
+                }
+            ]
+        )
 
         for event in source.events():
             apply_replay_event(event, books)
@@ -225,14 +235,18 @@ class TestApplyReplayEvent:
         books = {"BTC-USDT": book}
 
         source = ReplayDataSource()
-        source.add_trades([{
-            "timestamp": 1000.0,
-            "trading_pair": "BTC-USDT",
-            "trade_id": "t1",
-            "price": Decimal("50100"),
-            "amount": Decimal("2.0"),
-            "is_buyer_maker": False,  # buy aggressor consumes asks
-        }])
+        source.add_trades(
+            [
+                {
+                    "timestamp": 1000.0,
+                    "trading_pair": "BTC-USDT",
+                    "trade_id": "t1",
+                    "price": Decimal("50100"),
+                    "amount": Decimal("2.0"),
+                    "is_buyer_maker": False,  # buy aggressor consumes asks
+                }
+            ]
+        )
 
         for event in source.events():
             apply_replay_event(event, books)
@@ -245,14 +259,18 @@ class TestApplyReplayEvent:
     def test_unknown_pair_ignored(self):
         books = {"ETH-USDT": SimulatedOrderBook("ETH-USDT")}
         source = ReplayDataSource()
-        source.add_trades([{
-            "timestamp": 1000.0,
-            "trading_pair": "BTC-USDT",
-            "trade_id": "t1",
-            "price": Decimal("50100"),
-            "amount": Decimal("1.0"),
-            "is_buyer_maker": False,
-        }])
+        source.add_trades(
+            [
+                {
+                    "timestamp": 1000.0,
+                    "trading_pair": "BTC-USDT",
+                    "trade_id": "t1",
+                    "price": Decimal("50100"),
+                    "amount": Decimal("1.0"),
+                    "is_buyer_maker": False,
+                }
+            ]
+        )
 
         # Should not raise
         for event in source.events():
