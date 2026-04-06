@@ -108,15 +108,6 @@ class OrderTracker:
         return None
 
     @property
-    def conditional_orders(self) -> dict[str, InFlightOrder]:
-        """Return all open conditional orders."""
-        return {
-            oid: order
-            for oid, order in self._orders.items()
-            if order.is_conditional and order.is_open
-        }
-
-    @property
     def open_orders(self) -> list[InFlightOrder]:
         """Get all currently open orders."""
         return [o for o in self._orders.values() if o.is_open]
