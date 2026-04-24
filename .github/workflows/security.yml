@@ -8,10 +8,7 @@ on:
   schedule:
     - cron: '0 2 * * 0'
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+permissions: read-all
 
 jobs:
   codeql:
@@ -23,6 +20,7 @@ jobs:
       packages: read
       actions: read
       contents: read
+
     strategy:
       fail-fast: false
       matrix:
