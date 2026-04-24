@@ -8,10 +8,7 @@ on:
   schedule:
     - cron: '0 2 * * 0'
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+permissions: read-all
 
 jobs:
   codeql:
@@ -23,6 +20,7 @@ jobs:
       packages: read
       actions: read
       contents: read
+
     strategy:
       fail-fast: false
       matrix:
@@ -57,6 +55,9 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install safety bandit
+    - name: Run Safety check
+      run: |
+        safety check --json --output safety-report.json || true
     - name: Run Bandit security scan
       run: bandit -r market_simulator/ -f json -o bandit-report.json || true
     - name: Upload security reports
@@ -64,7 +65,9 @@ jobs:
       if: always()
       with:
         name: security-reports
-        path: bandit-report.json
+        path: |
+          safety-report.json
+          bandit-report.json
 
   secrets-scan:
     name: Secrets Detection
@@ -76,9 +79,9 @@ jobs:
       run: pip install detect-secrets
     - name: Run secrets detection
       run: |
-        detect-secrets scan --baseline .secrets.baseline --all-files
-        if [ $? -ne 0 ]; then
-          echo "::error::New secrets detected!"
+        detect-secrets scan --all-files > secrets-results.json
+        if detect-secrets audit --report --json secrets-results.json 2>/dev/null | grep -q '"is_secret": true'; then
+          echo "::error::Potential secrets detected! Please review secrets-results.json"
           exit 1
         fi
 
