@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from typing import override
 
 from market_simulator.core.types import InFlightOrder, MatchResult, OrderType, TradeType
 from market_simulator.simulator.order_book import SimulatedOrderBook
@@ -37,6 +38,7 @@ class ImmediateFillEngine(MatchingEngine):
     - Always fills the full amount.
     """
 
+    @override
     def check_and_match(
         self,
         order: InFlightOrder,
@@ -70,6 +72,7 @@ class LimitOrderEngine(MatchingEngine):
     - LIMIT_MAKER orders fill only when they would be maker (not crossing spread).
     """
 
+    @override
     def check_and_match(
         self,
         order: InFlightOrder,
@@ -148,6 +151,7 @@ class OrderBookDepthEngine(MatchingEngine):
     - Partial fills if insufficient liquidity.
     """
 
+    @override
     def check_and_match(
         self,
         order: InFlightOrder,
