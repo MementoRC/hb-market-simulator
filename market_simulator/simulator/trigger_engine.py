@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from typing import override
 
 from market_simulator.core.types import InFlightOrder, OrderType, TradeType
 
@@ -63,6 +64,7 @@ class NullTriggerEngine(TriggerEngine):
     for exchange configurations where conditional orders are not desired.
     """
 
+    @override
     def evaluate(
         self,
         order: InFlightOrder,
@@ -104,6 +106,7 @@ class StandardTriggerEngine(TriggerEngine):
         # Per-order trailing reference prices: order_id -> extreme_price
         self._trailing_references: dict[str, Decimal] = {}
 
+    @override
     def evaluate(
         self,
         order: InFlightOrder,

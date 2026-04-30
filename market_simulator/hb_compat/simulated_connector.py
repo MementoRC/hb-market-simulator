@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any
+from typing import Any, override
 
 from bidict import bidict
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -79,29 +79,37 @@ class _StubOrderBookDataSource(OrderBookTrackerDataSource):
     def __init__(self, trading_pairs: list[str]):
         super().__init__(trading_pairs)
 
+    @override
     async def get_last_traded_prices(
         self, trading_pairs: list[str], domain: str | None = None
     ) -> dict[str, float]:
         return {pair: 0.0 for pair in trading_pairs}
 
+    @override
     async def get_new_order_book_dict(self, trading_pair: str) -> dict[str, Any]:
         return {"trading_pair": trading_pair, "bids": [], "asks": [], "update_id": 0}
 
+    @override
     async def listen_for_subscriptions(self):
         await asyncio.sleep(1e9)  # Never returns
 
+    @override
     async def listen_for_order_book_diffs(self, ev_loop, output):
         await asyncio.sleep(1e9)
 
+    @override
     async def listen_for_order_book_snapshots(self, ev_loop, output):
         await asyncio.sleep(1e9)
 
+    @override
     async def listen_for_trades(self, ev_loop, output):
         await asyncio.sleep(1e9)
 
+    @override
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:
         return True
 
+    @override
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
         return True
 
@@ -112,6 +120,7 @@ class _StubUserStreamDataSource(UserStreamTrackerDataSource):
     def __init__(self):
         super().__init__()
 
+    @override
     @property
     def last_recv_time(self) -> float:
         # Return current time so is_user_stream_initialized returns True
@@ -119,6 +128,7 @@ class _StubUserStreamDataSource(UserStreamTrackerDataSource):
 
         return time.time()
 
+    @override
     async def listen_for_user_stream(self, output):
         await asyncio.sleep(1e9)
 
@@ -180,50 +190,62 @@ class SimulatedConnector(ExchangePyBase):
     # Abstract properties (required by ExchangePyBase)
     # -------------------------------------------------------------------
 
+    @override
     @property
     def name(self) -> str:
         return self._sim_config.name
 
+    @override
     @property
     def authenticator(self):
         return None
 
+    @override
     @property
     def rate_limits_rules(self) -> list:
         return []
 
+    @override
     @property
     def domain(self) -> str:
         return self._sim_config.name
 
+    @override
     @property
     def client_order_id_max_length(self) -> int:
         return 64
 
+    @override
     @property
     def client_order_id_prefix(self) -> str:
         return "SIM"
 
+    @override
     @property
     def trading_rules_request_path(self) -> str:
         return ""
 
+    @override
     @property
     def trading_pairs_request_path(self) -> str:
         return ""
 
+    @override
     @property
     def check_network_request_path(self) -> str:
         return ""
 
+    @override
     @property
     def trading_pairs(self) -> list[str]:
         return self._sim_trading_pairs
 
+    @override
     @property
     def is_cancel_request_in_exchange_synchronous(self) -> bool:
         return True
 
+    @override
     @property
     def is_trading_required(self) -> bool:
         return True
@@ -232,6 +254,7 @@ class SimulatedConnector(ExchangePyBase):
     # Abstract methods (required by ExchangePyBase)
     # -------------------------------------------------------------------
 
+    @override
     def supported_order_types(self) -> list[OrderType]:
         return [
             OrderType.MARKET,
@@ -244,33 +267,41 @@ class SimulatedConnector(ExchangePyBase):
             SimOrderType.TRAILING_STOP,
         ]
 
+    @override
     def _is_request_exception_related_to_time_synchronizer(
         self, request_exception: Exception
     ) -> bool:
         return False
 
+    @override
     def _is_order_not_found_during_status_update_error(
         self, status_update_exception: Exception
     ) -> bool:
         return False
 
+    @override
     def _is_order_not_found_during_cancelation_error(
         self, cancelation_exception: Exception
     ) -> bool:
         return False
 
+    @override
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
         return _StubWebAssistantsFactory()
 
+    @override
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
         return _StubOrderBookDataSource(self._sim_trading_pairs)
 
+    @override
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
         return _StubUserStreamDataSource()
 
+    @override
     async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         return []
 
+    @override
     def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         pass
 
@@ -278,6 +309,7 @@ class SimulatedConnector(ExchangePyBase):
     # Order placement (routes to SimulatedExchange)
     # -------------------------------------------------------------------
 
+    @override
     async def _place_order(
         self,
         order_id: str,
@@ -321,6 +353,7 @@ class SimulatedConnector(ExchangePyBase):
         timestamp = self._sim_exchange.current_timestamp
         return exchange_order_id, timestamp
 
+    @override
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder) -> bool:
         """Cancel order on simulated exchange."""
         self._sim_exchange.cancel(tracked_order.trading_pair, order_id)
@@ -330,6 +363,7 @@ class SimulatedConnector(ExchangePyBase):
     # Fee calculation
     # -------------------------------------------------------------------
 
+    @override
     def _get_fee(
         self,
         base_currency: str,
@@ -358,6 +392,7 @@ class SimulatedConnector(ExchangePyBase):
     # Balance and trading rules updates (no network needed)
     # -------------------------------------------------------------------
 
+    @override
     async def _update_balances(self):
         """Sync balances from SimulatedExchange to ConnectorBase dicts."""
         all_balances = self._sim_exchange.balance_manager.get_all_balances()
@@ -375,6 +410,7 @@ class SimulatedConnector(ExchangePyBase):
             del self._account_balances[stale]
             del self._account_available_balances[stale]
 
+    @override
     async def _update_trading_rules(self):
         """Populate trading rules from SimulatedExchange config."""
         for pair, sim_rule in self._sim_exchange.trading_rules.items():
@@ -391,6 +427,7 @@ class SimulatedConnector(ExchangePyBase):
         mapping = bidict({pair: pair for pair in self._trading_rules})
         self._set_trading_pair_symbol_map(mapping)
 
+    @override
     async def _update_trading_fees(self):
         pass  # Fees are configured, not fetched
 
@@ -398,9 +435,11 @@ class SimulatedConnector(ExchangePyBase):
     # Order status (handled by sim exchange events, no polling needed)
     # -------------------------------------------------------------------
 
+    @override
     async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         return []  # Fills are pushed via _on_sim_fill, no polling
 
+    @override
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
         """Check sim exchange for order status."""
         sim_order = self._sim_exchange.get_in_flight_order(tracked_order.client_order_id)
@@ -432,6 +471,7 @@ class SimulatedConnector(ExchangePyBase):
             exchange_order_id=tracked_order.exchange_order_id,
         )
 
+    @override
     async def _user_stream_event_listener(self):
         """No user stream for simulated exchange."""
         await asyncio.sleep(1e9)
@@ -440,6 +480,7 @@ class SimulatedConnector(ExchangePyBase):
     # Simulation tick
     # -------------------------------------------------------------------
 
+    @override
     def tick(self, timestamp: float):
         """Advance simulation and process fills."""
         super().tick(timestamp)

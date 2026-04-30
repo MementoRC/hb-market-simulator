@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from typing import override
 
 from market_simulator.core.types import OrderType, TradeFee, TradeType
 
@@ -30,6 +31,7 @@ class FeeModel(ABC):
 class ZeroFeeModel(FeeModel):
     """No fees charged."""
 
+    @override
     def calculate_fee(
         self,
         trading_pair: str,
@@ -64,6 +66,7 @@ class FlatFeeModel(FeeModel):
     def taker_rate(self) -> Decimal:
         return self._taker_rate
 
+    @override
     def calculate_fee(
         self,
         trading_pair: str,
