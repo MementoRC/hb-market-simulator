@@ -446,6 +446,8 @@ class SimulatedConnector(ExchangePyBase):
         # Advance sim exchange and match orders
         self._sim_exchange.process_tick(timestamp)
         # Sync balances after fills
+        # TODO(py312): asyncio.ensure_future here is inside a sync interface override —
+        # structural refactor required before migrating to asyncio.create_task
         asyncio.ensure_future(self._update_balances())
 
     # -------------------------------------------------------------------
