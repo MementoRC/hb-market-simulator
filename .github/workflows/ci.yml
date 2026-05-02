@@ -10,7 +10,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: read-all
+# Deny all permissions by default; each job requests only what it needs.
+permissions: {}
 
 jobs:
   ci:
@@ -35,6 +36,7 @@ jobs:
   security-scanning:
     name: "Security Scanning"
     runs-on: ubuntu-latest
+    permissions: {}
     needs: [ci]
     if: always()
     steps:
@@ -49,6 +51,7 @@ jobs:
   branch-policy:
     name: "Branch Policy"
     runs-on: ubuntu-latest
+    permissions: {}
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     steps:
       - name: Check source branch
@@ -61,6 +64,7 @@ jobs:
   ci-success:
     name: "CI Success"
     runs-on: ubuntu-latest
+    permissions: {}
     needs: [ci]
     if: always()
     steps:
