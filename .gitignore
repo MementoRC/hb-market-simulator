@@ -14,3 +14,6 @@ htmlcov/
 .mcp.json
 .serena/
 logs/
+
+# Git worktrees (per submodule worktree workflow)
+.worktrees/
