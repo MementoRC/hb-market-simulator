@@ -8,7 +8,7 @@ on:
     - cron: '0 2 * * 0'   # weekly, Sunday 02:00 UTC (preserves existing cadence)
 jobs:
   security:
-    uses: Claire-s-Monster/ci-framework/.github/workflows/reusable-security.yml@1a9f71d1ebbd0b1393938a05434af724276934e1  # v2.9.5
+    uses: Claire-s-Monster/ci-framework/.github/workflows/reusable-security.yml@dd7b8424ba3869283fab81f60aaec75cdac3168e  # v2.9.6
     permissions:
       contents: read
       actions: read
