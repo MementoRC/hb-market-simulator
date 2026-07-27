@@ -24,6 +24,7 @@ jobs:
       checks: write
     with:
       pixi-environment: "ci"
+      pixi-version: "latest"
       python-versions: '["3.12"]'
       os-matrix: '["ubuntu-latest"]'
       enable-performance: false
