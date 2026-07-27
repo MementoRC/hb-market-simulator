@@ -1,6 +1,7 @@
 """Tests for EventBus."""
 
-from market_simulator.core.events import EventBus, MarketEvent
+from market_simulator.core.events import MarketEvent
+from market_simulator.hb_compat.event_bus_adapter import EventBusAdapter as EventBus
 
 
 class TestEventBus:
