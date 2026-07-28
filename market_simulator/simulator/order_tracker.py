@@ -123,12 +123,12 @@ class OrderTracker:
     @property
     def conditional_orders(self) -> list[InFlightOrder]:
         """Get all open orders with a conditional order type (stop-loss, take-profit, etc.)."""
-        return [o for o in self.open_orders if o.order_type.is_conditional]
+        return [o for o in self.open_orders if o.order_type.is_conditional_type()]
 
     @property
     def non_conditional_orders(self) -> list[InFlightOrder]:
         """Get all open orders that are NOT conditional (MARKET, LIMIT, LIMIT_MAKER)."""
-        return [o for o in self.open_orders if not o.order_type.is_conditional]
+        return [o for o in self.open_orders if not o.order_type.is_conditional_type()]
 
     @property
     def all_orders(self) -> dict[str, InFlightOrder]:
