@@ -46,6 +46,7 @@ pytest-asyncio = ">=0.21.0"
 pytest-cov = "*"
 pytest-mock = "*"
 pytest-xdist = "*"
+pytest-timeout = "*"
 ruff = "*"
 mypy = "*"
 
