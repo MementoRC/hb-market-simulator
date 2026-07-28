@@ -10,11 +10,15 @@ dependencies = [
     "pandas>=1.0.0",
     "pydantic>=2",
     "numpy>=1.20.0",
+    "hb-event-bus @ git+https://github.com/MementoRC/hb-event-bus.git@7e2538f21af739c119dd44f3934a8dc48586254c",
 ]
 
 [build-system]
 requires = ["hatchling>=1.18.0"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 path = "market_simulator/__about__.py"
@@ -24,7 +28,7 @@ packages = ["market_simulator"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+platforms = ["linux-64"]
 
 [tool.pixi.dependencies]
 python = ">=3.12,<3.13"
@@ -42,6 +46,7 @@ pytest-asyncio = ">=0.21.0"
 pytest-cov = "*"
 pytest-mock = "*"
 pytest-xdist = "*"
+pytest-timeout = "*"
 ruff = "*"
 mypy = "*"
 

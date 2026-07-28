@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
-from market_simulator.core.events import EventBus, MarketEvent
+from market_simulator.core.events import MarketEvent
 from market_simulator.core.types import (
     InFlightOrder,
     OrderStatus,
@@ -24,6 +24,7 @@ from market_simulator.core.types import (
     TradeType,
     TradingRule,
 )
+from market_simulator.hb_compat.event_bus_adapter import EventBusAdapter
 from market_simulator.simulator.balance_manager import BalanceManager
 from market_simulator.simulator.fee_model import FeeModel, FlatFeeModel
 from market_simulator.simulator.matching_engine import LimitOrderEngine, MatchingEngine
@@ -151,7 +152,7 @@ class SimulatedExchange:
         self._matching_engine = matching_engine or LimitOrderEngine()
         self._order_tracker = OrderTracker()
         self._fee_model = fee_model or FlatFeeModel()
-        self._event_bus = EventBus()
+        self._event_bus = EventBusAdapter()
         self._trigger_engine: TriggerEngine = trigger_engine or StandardTriggerEngine()
 
         # Trading rules
@@ -204,7 +205,7 @@ class SimulatedExchange:
         return self._order_tracker.in_flight_orders
 
     @property
-    def event_bus(self) -> EventBus:
+    def event_bus(self) -> EventBusAdapter:
         return self._event_bus
 
     @property
