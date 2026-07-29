@@ -1,7 +1,13 @@
 """Core data types for market simulation.
 
-These types are standalone — no hummingbot imports. The hb_compat layer maps
-these to/from hummingbot's own types (OrderType, TradeType, PriceType, etc.).
+OrderType/TradeType are the canonical enums from hb-data-type-primitives,
+re-exported via the hb_compat layer (see hb_compat/common.py — ADR 0001
+Group D). The remaining types here (PriceType, OrderStatus, TradingRule,
+TradeFee, InFlightOrder) are standalone — no hummingbot imports — and are
+NOT yet migrated to hb-data-type-primitives; see hb-market-simulator issue
+#36 for the deferred-scope rationale. The hb_compat layer maps these to/from
+hummingbot's own types (OrderType, TradeType, PriceType, etc.) at the
+connector boundary.
 """
 
 from __future__ import annotations
@@ -10,36 +16,23 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, IntEnum, auto
 
+from market_simulator.hb_compat.common import OrderType, TradeType
+
+__all__ = [
+    "InFlightOrder",
+    "MatchResult",
+    "OrderStatus",
+    "OrderType",
+    "PositionAction",
+    "PriceType",
+    "TradeFee",
+    "TradeType",
+    "TradingRule",
+]
+
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
-
-
-class OrderType(Enum):
-    MARKET = "MARKET"
-    LIMIT = "LIMIT"
-    LIMIT_MAKER = "LIMIT_MAKER"
-    STOP_LOSS = "STOP_LOSS"
-    STOP_LOSS_LIMIT = "STOP_LOSS_LIMIT"
-    TAKE_PROFIT = "TAKE_PROFIT"
-    TAKE_PROFIT_LIMIT = "TAKE_PROFIT_LIMIT"
-    TRAILING_STOP = "TRAILING_STOP"
-
-    @property
-    def is_conditional(self) -> bool:
-        """Return True if this order type requires a trigger condition before execution."""
-        return self in (
-            OrderType.STOP_LOSS,
-            OrderType.STOP_LOSS_LIMIT,
-            OrderType.TAKE_PROFIT,
-            OrderType.TAKE_PROFIT_LIMIT,
-            OrderType.TRAILING_STOP,
-        )
-
-
-class TradeType(Enum):
-    BUY = "BUY"
-    SELL = "SELL"
 
 
 class PriceType(IntEnum):
@@ -132,7 +125,7 @@ class InFlightOrder:
 
     @property
     def is_conditional(self) -> bool:
-        return self.order_type.is_conditional
+        return self.order_type.is_conditional_type()
 
     @property
     def is_open(self) -> bool:

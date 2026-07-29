@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2",
     "numpy>=1.20.0",
     "hb-event-bus @ git+https://github.com/MementoRC/hb-event-bus.git@7e2538f21af739c119dd44f3934a8dc48586254c",
+    "hb-data-type-primitives @ git+https://github.com/MementoRC/hb-data-type-primitives.git@d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95",
 ]
 
 [build-system]

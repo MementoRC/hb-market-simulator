@@ -335,7 +335,7 @@ class SimulatedExchange:
             locked_currency = order.quote_asset
             collateral_price = (
                 order.trigger_price
-                if (order.order_type.is_conditional and order.trigger_price is not None)
+                if (order.order_type.is_conditional_type() and order.trigger_price is not None)
                 else order.price
             )
             locked_amount = order.remaining_amount * collateral_price
@@ -346,7 +346,7 @@ class SimulatedExchange:
         self._balance_manager.apply_cancel(locked_currency, locked_amount)
 
         # Clean up any trailing stop reference for cancelled conditional orders.
-        if order.order_type.is_conditional and isinstance(
+        if order.order_type.is_conditional_type() and isinstance(
             self._trigger_engine, StandardTriggerEngine
         ):
             self._trigger_engine.clear_trailing_reference(client_order_id)
@@ -447,7 +447,7 @@ class SimulatedExchange:
             lock_currency = trading_pair.split("-")[1]
             collateral_price = (
                 trigger_price
-                if (order_type.is_conditional and trigger_price is not None)
+                if (order_type.is_conditional_type() and trigger_price is not None)
                 else price
             )
             lock_amount = amount * collateral_price
@@ -546,7 +546,7 @@ class SimulatedExchange:
             locked_currency = order.quote_asset
             collateral_price = (
                 order.trigger_price
-                if (order.order_type.is_conditional and order.trigger_price is not None)
+                if (order.order_type.is_conditional_type() and order.trigger_price is not None)
                 else order.price
             )
             locked_amount = order.remaining_amount * collateral_price
@@ -592,8 +592,8 @@ class SimulatedExchange:
         logger.debug(
             "Fired conditional order %s (%s %s %s) → new MARKET order placed",
             original_order_id,
-            order.order_type.value,
-            order.trade_type.value,
+            order.order_type.name,
+            order.trade_type.name,
             trading_pair,
         )
 
