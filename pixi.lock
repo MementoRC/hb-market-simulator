@@ -121,8 +121,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-21.7.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
-      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
   default:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -209,8 +209,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
-      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
   py312:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -297,8 +297,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.16.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
-      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
   quality-ci:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -371,8 +371,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
-      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
   quality-extended:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -479,8 +479,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/urllib3-2.7.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.47.0-pyhd8ed1ab_0.conda
-      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+      - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -515,7 +515,7 @@ packages:
   license: MIT AND Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/aiohttp?source=compressed-mapping
+  - pkg:pypi/aiohttp?source=hash-mapping
   size: 1087577
   timestamp: 1784901629231
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ast-serialize-0.6.0-py310hd8a072f_0.conda
@@ -547,7 +547,7 @@ packages:
   - zstd >=1.5.7,<1.6.0a0
   license: BSD-3-Clause AND MIT AND EPL-2.0
   purls:
-  - pkg:pypi/backports-zstd?source=compressed-mapping
+  - pkg:pypi/backports-zstd?source=hash-mapping
   size: 239892
   timestamp: 1781450817988
 - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-python-1.2.0-py312hdb49522_1.conda
@@ -606,7 +606,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/coverage?source=compressed-mapping
+  - pkg:pypi/coverage?source=hash-mapping
   size: 393169
   timestamp: 1784150236479
 - conda: https://conda.anaconda.org/conda-forge/linux-64/cython-3.2.9-py312h68e6be4_0.conda
@@ -902,7 +902,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/msgpack?source=compressed-mapping
+  - pkg:pypi/msgpack?source=hash-mapping
   size: 112800
   timestamp: 1782460774570
 - conda: https://conda.anaconda.org/conda-forge/linux-64/multidict-6.7.1-py312h8a5da7c_0.conda
@@ -936,7 +936,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/mypy?source=compressed-mapping
+  - pkg:pypi/mypy?source=hash-mapping
   size: 22849418
   timestamp: 1783986235162
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.6-hdb14827_0.conda
@@ -966,7 +966,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/numpy?source=compressed-mapping
+  - pkg:pypi/numpy?source=hash-mapping
   size: 8929128
   timestamp: 1783206200235
 - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.3-h35e630c_0.conda
@@ -1049,7 +1049,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/propcache?source=compressed-mapping
+  - pkg:pypi/propcache?source=hash-mapping
   size: 51586
   timestamp: 1780037816755
 - conda: https://conda.anaconda.org/conda-forge/linux-64/psutil-7.2.2-py312h5253ce2_0.conda
@@ -1121,7 +1121,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/librt?source=compressed-mapping
+  - pkg:pypi/librt?source=hash-mapping
   size: 164702
   timestamp: 1783529463492
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pyyaml-6.0.3-py312h8a5da7c_1.conda
@@ -1164,7 +1164,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/ruff?source=compressed-mapping
+  - pkg:pypi/ruff?source=hash-mapping
   size: 9384917
   timestamp: 1784938279462
 - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_hd70dff1_3.conda
@@ -1222,7 +1222,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/yarl?source=compressed-mapping
+  - pkg:pypi/yarl?source=hash-mapping
   size: 171280
   timestamp: 1784526501141
 - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
@@ -1255,7 +1255,7 @@ packages:
   license: PSF-2.0
   license_family: PSF
   purls:
-  - pkg:pypi/aiohappyeyeballs?source=compressed-mapping
+  - pkg:pypi/aiohappyeyeballs?source=hash-mapping
   size: 24690
   timestamp: 1782986823268
 - conda: https://conda.anaconda.org/conda-forge/noarch/aiosignal-1.4.0-pyhd8ed1ab_0.conda
@@ -1366,7 +1366,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/cachecontrol?source=compressed-mapping
+  - pkg:pypi/cachecontrol?source=hash-mapping
   size: 24906
   timestamp: 1782470439060
 - conda: https://conda.anaconda.org/conda-forge/noarch/certifi-2026.7.22-pyhd8ed1ab_0.conda
@@ -1376,7 +1376,7 @@ packages:
   - python >=3.10
   license: ISC
   purls:
-  - pkg:pypi/certifi?source=compressed-mapping
+  - pkg:pypi/certifi?source=hash-mapping
   size: 137015
   timestamp: 1784717699092
 - conda: https://conda.anaconda.org/conda-forge/noarch/cfgv-3.5.0-pyhd8ed1ab_0.conda
@@ -1398,7 +1398,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/charset-normalizer?source=compressed-mapping
+  - pkg:pypi/charset-normalizer?source=hash-mapping
   size: 61418
   timestamp: 1783505332569
 - conda: https://conda.anaconda.org/conda-forge/noarch/colorama-0.4.6-pyhd8ed1ab_1.conda
@@ -1460,7 +1460,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/distlib?source=compressed-mapping
+  - pkg:pypi/distlib?source=hash-mapping
   size: 303705
   timestamp: 1781320269259
 - conda: https://conda.anaconda.org/conda-forge/noarch/editables-0.6-pyhcf101f3_0.conda
@@ -1504,7 +1504,7 @@ packages:
   - python >=3.10
   license: Unlicense
   purls:
-  - pkg:pypi/filelock?source=compressed-mapping
+  - pkg:pypi/filelock?source=hash-mapping
   size: 77187
   timestamp: 1784663191506
 - conda: https://conda.anaconda.org/conda-forge/noarch/gitdb-4.0.12-pyhd8ed1ab_0.conda
@@ -1529,7 +1529,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/gitpython?source=compressed-mapping
+  - pkg:pypi/gitpython?source=hash-mapping
   size: 165604
   timestamp: 1785074931101
 - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.4.0-pyhcf101f3_0.conda
@@ -1543,7 +1543,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/h2?source=compressed-mapping
+  - pkg:pypi/h2?source=hash-mapping
   size: 100184
   timestamp: 1784898236952
 - conda: https://conda.anaconda.org/conda-forge/noarch/hatchling-1.31.0-pyhcf101f3_0.conda
@@ -1561,7 +1561,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/hatchling?source=compressed-mapping
+  - pkg:pypi/hatchling?source=hash-mapping
   size: 62024
   timestamp: 1783514388419
 - conda: https://conda.anaconda.org/conda-forge/noarch/hpack-4.2.0-pyhd8ed1ab_0.conda
@@ -1572,7 +1572,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/hpack?source=compressed-mapping
+  - pkg:pypi/hpack?source=hash-mapping
   size: 32884
   timestamp: 1782283986153
 - conda: https://conda.anaconda.org/conda-forge/noarch/html5lib-1.1-pyhd8ed1ab_2.conda
@@ -1620,7 +1620,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/idna?source=compressed-mapping
+  - pkg:pypi/idna?source=hash-mapping
   size: 163869
   timestamp: 1781620148226
 - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-9.0.0-pyhcf101f3_0.conda
@@ -1633,7 +1633,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/importlib-metadata?source=compressed-mapping
+  - pkg:pypi/importlib-metadata?source=hash-mapping
   size: 34766
   timestamp: 1779714582554
 - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
@@ -1824,7 +1824,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/platformdirs?source=compressed-mapping
+  - pkg:pypi/platformdirs?source=hash-mapping
   size: 26632
   timestamp: 1784661349391
 - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
@@ -1852,7 +1852,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pre-commit?source=compressed-mapping
+  - pkg:pypi/pre-commit?source=hash-mapping
   size: 202254
   timestamp: 1784706397465
 - conda: https://conda.anaconda.org/conda-forge/noarch/py-serializable-2.1.0-pyhe01879c_0.conda
@@ -1877,7 +1877,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/pycparser?source=compressed-mapping
+  - pkg:pypi/pycparser?source=hash-mapping
   size: 55886
   timestamp: 1779293633166
 - conda: https://conda.anaconda.org/conda-forge/noarch/pydantic-2.13.4-pyhcf101f3_0.conda
@@ -1961,7 +1961,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pytest?source=compressed-mapping
+  - pkg:pypi/pytest?source=hash-mapping
   size: 306724
   timestamp: 1782127176429
 - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-asyncio-1.4.0-pyhcf101f3_0.conda
@@ -2076,7 +2076,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/python-discovery?source=compressed-mapping
+  - pkg:pypi/python-discovery?source=hash-mapping
   size: 35723
   timestamp: 1784661604261
 - conda: https://conda.anaconda.org/conda-forge/noarch/python-gil-3.12.13-hd8ed1ab_0.conda
@@ -2115,7 +2115,7 @@ packages:
   license: Apache-2.0
   license_family: APACHE
   purls:
-  - pkg:pypi/requests?source=compressed-mapping
+  - pkg:pypi/requests?source=hash-mapping
   size: 68709
   timestamp: 1778851103479
 - conda: https://conda.anaconda.org/conda-forge/noarch/rich-15.0.0-pyhcf101f3_0.conda
@@ -2141,7 +2141,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/setuptools?source=compressed-mapping
+  - pkg:pypi/setuptools?source=hash-mapping
   size: 642081
   timestamp: 1783619174976
 - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
@@ -2165,7 +2165,7 @@ packages:
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/smmap?source=compressed-mapping
+  - pkg:pypi/smmap?source=hash-mapping
   size: 27262
   timestamp: 1781021238494
 - conda: https://conda.anaconda.org/conda-forge/noarch/sortedcontainers-2.4.0-pyhd8ed1ab_1.conda
@@ -2283,7 +2283,7 @@ packages:
   license: PSF-2.0
   license_family: PSF
   purls:
-  - pkg:pypi/typing-extensions?source=compressed-mapping
+  - pkg:pypi/typing-extensions?source=hash-mapping
   size: 52631
   timestamp: 1783002732887
 - conda: https://conda.anaconda.org/conda-forge/noarch/tzdata-2026c-h151e31d_0.conda
@@ -2323,7 +2323,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/virtualenv?source=compressed-mapping
+  - pkg:pypi/virtualenv?source=hash-mapping
   size: 3272893
   timestamp: 1784643709040
 - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-pyhd8ed1ab_3.conda
@@ -2358,10 +2358,10 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/zipp?source=compressed-mapping
+  - pkg:pypi/zipp?source=hash-mapping
   size: 24190
   timestamp: 1779159948016
-- pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95#d5ff30ebffb47fa5be4c9ce9a03a98dae4f63f95
+- pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
   name: hb-data-type-primitives
   version: 0.1.0
   requires_dist:
@@ -2374,7 +2374,7 @@ packages:
   - pytest>=9.0.3 ; extra == 'dev'
   - ruff>=0.15.10 ; extra == 'dev'
   requires_python: '>=3.12'
-- pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=7e2538f21af739c119dd44f3934a8dc48586254c#7e2538f21af739c119dd44f3934a8dc48586254c
+- pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.1.0#3a81565dbd9a3a6947035d6549ebe72e62421c8e
   name: hb-event-bus
   version: 0.1.0
   requires_python: '>=3.12'
