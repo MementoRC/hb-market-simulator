@@ -9,11 +9,12 @@ compiled.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 
 
-def calculate_max_drawdown(pnl_series: list[float] | object, n: int) -> tuple[float, float]:
+def calculate_max_drawdown(pnl_series: Any, n: int) -> tuple[float, float]:
     """Calculate max drawdown and max drawdown percentage.
 
     Args:
@@ -47,7 +48,7 @@ def calculate_max_drawdown(pnl_series: list[float] | object, n: int) -> tuple[fl
 
 
 def calculate_max_drawdown_vectorized(
-    cumulative_returns: list[float] | object,
+    cumulative_returns: Any,
 ) -> tuple[float, float]:
     """Calculate max drawdown using NumPy vectorized operations.
 
@@ -78,9 +79,7 @@ def calculate_max_drawdown_vectorized(
     return max_dd, max_dd_pct
 
 
-def calculate_sharpe_ratio(
-    returns: list[float] | object, n: int, periods_per_year: float = 252.0
-) -> float:
+def calculate_sharpe_ratio(returns: Any, n: int, periods_per_year: float = 252.0) -> float:
     """Calculate annualized Sharpe ratio from a returns series.
 
     Uses Welford-adjacent single-pass variance for numerical stability.
@@ -113,7 +112,7 @@ def calculate_sharpe_ratio(
     return (mean / std) * math.sqrt(periods_per_year)
 
 
-def calculate_profit_factor(pnl_values: list[float] | object, n: int) -> float:
+def calculate_profit_factor(pnl_values: Any, n: int) -> float:
     """Calculate profit factor (sum of wins / abs sum of losses).
 
     Args:
@@ -142,9 +141,7 @@ def calculate_profit_factor(pnl_values: list[float] | object, n: int) -> float:
     return gross_profit / gross_loss
 
 
-def calculate_all_metrics(
-    pnl_series: list[float] | object, n: int
-) -> tuple[float, float, float, float]:
+def calculate_all_metrics(pnl_series: Any, n: int) -> tuple[float, float, float, float]:
     """Calculate all performance metrics in a single pass.
 
     *pnl_series* is treated as **cumulative P&L** for drawdown and as the
