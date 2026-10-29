@@ -96,7 +96,7 @@ format-check = "ruff format --check market_simulator tests"
 typecheck = "mypy market_simulator"
 type-check = "mypy market_simulator"
 security = "bandit -c pyproject.toml -r market_simulator/"
-quality = { depends-on = ["lint", "format-check"] }
+quality = { depends-on = ["lint", "format-check", "typecheck"] }
 check = { depends-on = ["quality", "test"] }
 
 [tool.ruff]
