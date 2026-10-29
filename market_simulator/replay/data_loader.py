@@ -10,6 +10,7 @@ import csv
 import logging
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ def load_trades_parquet(path: Path, trading_pair: str = "") -> list[dict]:
         raise ImportError("pandas is required for Parquet support") from err
 
     df = pd.read_parquet(path)
-    trades = []
+    trades: list[dict[str, Any]] = []
     for _, row in df.iterrows():
         pair = trading_pair or str(row.get("trading_pair", ""))
         trades.append(
@@ -133,7 +134,7 @@ def load_candles_parquet(path: Path, trading_pair: str = "") -> list[dict]:
         raise ImportError("pandas is required for Parquet support") from err
 
     df = pd.read_parquet(path)
-    candles = []
+    candles: list[dict[str, Any]] = []
     for _, row in df.iterrows():
         pair = trading_pair or str(row.get("trading_pair", ""))
         candles.append(

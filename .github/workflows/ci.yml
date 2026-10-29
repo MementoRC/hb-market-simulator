@@ -23,6 +23,7 @@ jobs:
       actions: read
       checks: write
     with:
+      codeql: true
       pixi-environment: "ci"
       python-versions: '["3.12"]'
       os-matrix: '["ubuntu-latest"]'

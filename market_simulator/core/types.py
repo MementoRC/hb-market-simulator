@@ -97,7 +97,7 @@ class TradeFee:
 
     @property
     def total_flat_fee(self) -> Decimal:
-        return sum(amount for _, amount in self.flat_fees) if self.flat_fees else Decimal("0")
+        return sum((amount for _, amount in self.flat_fees), Decimal("0"))
 
 
 @dataclass
