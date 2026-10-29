@@ -30,16 +30,16 @@ from market_simulator.order_book import OrderBook
 async def main():
     # Create an order book
     order_book = OrderBook(trading_pair="BTC-USD")
-    
+
     # Create a sandbox engine
     engine = SandboxEngine(order_books=[order_book])
-    
+
     # Start the simulation
     await engine.start()
-    
+
     # Submit orders and run strategy logic
     # ...
-    
+
     # Stop the simulation
     await engine.stop()
 
