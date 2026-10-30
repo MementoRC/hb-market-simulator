@@ -20,12 +20,13 @@ updates:
     labels:
       - "dependencies"
       - "python"
+    ignore:
+      - dependency-name: "ruff"
     groups:
       dev-dependencies:
         patterns:
           - "pytest*"
           - "mypy*"
-          - "ruff*"
           - "pre-commit*"
           - "bandit*"
           - "coverage*"
