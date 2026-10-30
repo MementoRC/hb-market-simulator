@@ -97,8 +97,9 @@ format-check = "ruff format --check market_simulator tests"
 typecheck = "mypy market_simulator"
 type-check = "mypy market_simulator"
 security = "bandit -c pyproject.toml -r market_simulator/"
-quality = { depends-on = ["lint", "format-check", "typecheck"] }
-check = { depends-on = ["quality", "test"] }
+check-conda-first = "python scripts/check_conda_first.py"
+quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck"] }
+check = { depends-on = ["check-conda-first", "quality", "test"] }
 
 [tool.ruff]
 target-version = "py312"
