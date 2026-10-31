@@ -3,6 +3,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+# Pixi (pixi.lock is committed: CI installs --locked and check-conda-first gates it)
 .pixi/
 *.so
 .mypy_cache/
@@ -14,7 +15,6 @@ htmlcov/
 .mcp.json
 .serena/
 logs/
-pixi.lock
 
 # Git worktrees (per submodule worktree workflow)
 .worktrees/
