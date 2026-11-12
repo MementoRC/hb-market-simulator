@@ -15,6 +15,8 @@ from data_type_primitives import (
 )
 
 from market_simulator.connector import SimulatedConnectorCore
+from market_simulator.connector.core import _STATE_MAP
+from market_simulator.core.types import OrderStatus
 from market_simulator.protocols import SimulatedVenueProtocol
 from market_simulator.simulator.exchange import SimulatedExchangeConfig
 from market_simulator.simulator.fee_model import FlatFeeModel, ZeroFeeModel
@@ -51,6 +53,26 @@ def _collect(core: SimulatedConnectorCore) -> tuple[list[OrderUpdate], list[Trad
     core.add_order_update_listener(orders.append)
     core.add_trade_update_listener(trades.append)
     return orders, trades
+
+
+_EXPECTED_STATES = {
+    OrderStatus.PENDING_CREATE: OrderState.PENDING_CREATE,
+    OrderStatus.OPEN: OrderState.OPEN,
+    OrderStatus.PARTIALLY_FILLED: OrderState.PARTIALLY_FILLED,
+    OrderStatus.FILLED: OrderState.FILLED,
+    OrderStatus.PENDING_CANCEL: OrderState.PENDING_CANCEL,
+    OrderStatus.CANCELLED: OrderState.CANCELED,
+    OrderStatus.FAILED: OrderState.FAILED,
+}
+
+
+class TestStateMap:
+    @pytest.mark.parametrize("status", list(OrderStatus))
+    def test_every_status_maps_to_expected_state(self, status):
+        assert _STATE_MAP[status] == _EXPECTED_STATES[status]
+
+    def test_map_keys_cover_every_status(self):
+        assert set(_STATE_MAP) == set(OrderStatus)
 
 
 class TestProtocol:
@@ -194,6 +216,16 @@ class TestOrderStatus:
             )
         assert list(core._finished) == ["b-1", "b-2"]
         assert (await core.request_order_status("b-0", "BTC-USDT")).new_state == OrderState.FAILED
+
+    async def test_pending_cancel_reports_pending_cancel(self):
+        core = _make_core()
+        await core.place_order(
+            "pc-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.LIMIT, Decimal("49000")
+        )
+        # The simulator never produces PENDING_CANCEL itself; set the state directly.
+        sim_order = core.sim_exchange.get_in_flight_order(core._orders["pc-1"].sim_order_id)
+        sim_order.status = OrderStatus.PENDING_CANCEL
+        assert (await core.request_order_status("pc-1")).new_state == OrderState.PENDING_CANCEL
 
     async def test_all_trade_updates_for_order_is_empty(self):
         assert await _make_core().all_trade_updates_for_order("x") == []
