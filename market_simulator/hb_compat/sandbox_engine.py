@@ -1,7 +1,7 @@
 """SandboxEngine: orchestrates a complete offline simulation.
 
 Wires together:
-  - SimulatedConnector (ExchangePyBase-compatible)
+  - SimulatedConnectorCore (L0 simulated venue)
   - ReplayDataSource (historical data feed)
   - SimulatedClock (deterministic time)
 
@@ -19,8 +19,8 @@ from decimal import Decimal
 
 import numpy as np
 
+from market_simulator.connector.core import SimulatedConnectorCore
 from market_simulator.core.clock import SimulatedClock
-from market_simulator.hb_compat.simulated_connector import SimulatedConnector
 from market_simulator.replay.replay_source import ReplayDataSource, apply_replay_event
 from market_simulator.simulator.exchange import SimulatedExchangeConfig
 from market_simulator.simulator.fee_model import FeeModel, FlatFeeModel
@@ -117,11 +117,11 @@ class SandboxEngine:
         )
 
         # Create connectors
-        self._connectors: dict[str, SimulatedConnector] = {}
+        self._connectors: dict[str, SimulatedConnectorCore] = {}
         self._replay_sources: dict[str, ReplayDataSource] = {}
 
         for ex_config in config.exchanges:
-            connector = SimulatedConnector(
+            connector = SimulatedConnectorCore(
                 config=ex_config,
                 matching_engine=config.matching_engine or LimitOrderEngine(),
                 fee_model=config.fee_model or FlatFeeModel(),
@@ -143,11 +143,11 @@ class SandboxEngine:
         return self._clock
 
     @property
-    def connectors(self) -> dict[str, SimulatedConnector]:
-        """Get connectors dict — inject into StrategyV2Base.connectors."""
+    def connectors(self) -> dict[str, SimulatedConnectorCore]:
+        """Get the connector cores by exchange name (wrap them in the parent's adapter)."""
         return dict(self._connectors)
 
-    def get_connector(self, name: str) -> SimulatedConnector:
+    def get_connector(self, name: str) -> SimulatedConnectorCore:
         return self._connectors[name]
 
     # -------------------------------------------------------------------
@@ -177,8 +177,8 @@ class SandboxEngine:
         loop = asyncio.new_event_loop()
         try:
             for connector in self._connectors.values():
-                loop.run_until_complete(connector._update_balances())
-                loop.run_until_complete(connector._update_trading_rules())
+                loop.run_until_complete(connector.update_balances())
+                loop.run_until_complete(connector.update_trading_rules())
                 connector.sim_exchange.ready = True
 
             # Apply initial replay events (order book snapshots at start)
@@ -192,7 +192,7 @@ class SandboxEngine:
 
     def run(
         self,
-        on_tick: Callable[[float, dict[str, SimulatedConnector]], None] | None = None,
+        on_tick: Callable[[float, dict[str, SimulatedConnectorCore]], None] | None = None,
     ) -> SimulationResult:
         """Run the simulation from start to end.
 

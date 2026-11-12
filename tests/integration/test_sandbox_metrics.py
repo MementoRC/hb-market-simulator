@@ -11,8 +11,6 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("hummingbot", reason="hummingbot not installed (CI-safe skip)")
-
 from market_simulator.core.types import OrderType as SimOrderType
 from market_simulator.hb_compat.sandbox_engine import SandboxConfig, SandboxEngine
 from market_simulator.replay.data_loader import load_candles_csv
@@ -63,6 +61,12 @@ def _make_engine(candles_csv, fee_model=None) -> SandboxEngine:
     return engine
 
 
+def _place(exchange, trade_type: str, *, amount: Decimal, price: Decimal) -> str:
+    """Place a MARKET order on the simulated exchange (BUY or SELL)."""
+    place = exchange.buy if trade_type == "BUY" else exchange.sell
+    return place("BTC-USDT", amount, SimOrderType.MARKET, price)
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -96,19 +100,17 @@ class TestMetricsRoundTrip:
             connector = connectors["sim_binance"]
             exchange = connector.sim_exchange
             if state["phase"] == "buy" and timestamp == 1000.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="BUY",
+                _place(
+                    exchange,
+                    "BUY",
                     amount=Decimal("0.1"),
                     price=Decimal("50100"),
                 )
                 state["phase"] = "sell"
             elif state["phase"] == "sell" and timestamp == 1300.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="SELL",
+                _place(
+                    exchange,
+                    "SELL",
                     amount=Decimal("0.1"),
                     price=Decimal("50600"),
                 )
@@ -132,19 +134,17 @@ class TestMetricsRoundTrip:
             connector = connectors["sim_binance"]
             exchange = connector.sim_exchange
             if state["phase"] == "sell" and timestamp == 1000.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="SELL",
+                _place(
+                    exchange,
+                    "SELL",
                     amount=Decimal("0.1"),
                     price=Decimal("50100"),
                 )
                 state["phase"] = "buy"
             elif state["phase"] == "buy" and timestamp == 1300.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="BUY",
+                _place(
+                    exchange,
+                    "BUY",
                     amount=Decimal("0.1"),
                     price=Decimal("50600"),
                 )
@@ -171,18 +171,16 @@ class TestMetricsMultipleTrades:
             if trade_count[0] >= 4:
                 return
             if trade_count[0] % 2 == 0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="BUY",
+                _place(
+                    exchange,
+                    "BUY",
                     amount=Decimal("0.05"),
                     price=Decimal("99999"),
                 )
             else:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="SELL",
+                _place(
+                    exchange,
+                    "SELL",
                     amount=Decimal("0.05"),
                     price=Decimal("1"),
                 )
@@ -210,19 +208,17 @@ class TestMetricsWithFees:
             connector = connectors["sim_binance"]
             exchange = connector.sim_exchange
             if state["phase"] == "buy" and timestamp == 1000.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="BUY",
+                _place(
+                    exchange,
+                    "BUY",
                     amount=Decimal("0.1"),
                     price=Decimal("50100"),
                 )
                 state["phase"] = "sell"
             elif state["phase"] == "sell" and timestamp == 1300.0:
-                exchange.place_order(
-                    trading_pair="BTC-USDT",
-                    order_type=SimOrderType.MARKET,
-                    trade_type="SELL",
+                _place(
+                    exchange,
+                    "SELL",
                     amount=Decimal("0.1"),
                     price=Decimal("50600"),
                 )

@@ -3,7 +3,7 @@
 Isolating the external dependency import here keeps market_simulator.core.types
 (and the rest of the package outside hb_compat) free of direct imports from
 hb-data-type-primitives, following the same hb_compat adapter convention used
-elsewhere in this package (see hb_compat/simulated_connector.py) and the
+elsewhere in this package (see hb_compat/event_bus_adapter.py) and the
 ADR 0001 Group D migration pattern (e.g. hb-strategy-framework's EventBusAdapter,
 hb-market-connector's feat/compat-order-trade-type).
 

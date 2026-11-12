@@ -7,6 +7,7 @@ from market_simulator.protocols.connector import (
     OrderExecutionProtocol,
     ReadinessProtocol,
 )
+from market_simulator.protocols.venue import SimulatedVenueProtocol
 
 __all__ = [
     "BalanceProtocol",
@@ -14,4 +15,5 @@ __all__ = [
     "MarketDataProtocol",
     "OrderExecutionProtocol",
     "ReadinessProtocol",
+    "SimulatedVenueProtocol",
 ]
