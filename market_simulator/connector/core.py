@@ -52,15 +52,18 @@ _SUPPORTED_ORDER_TYPES: tuple[OrderType, ...] = (
     OrderType.TRAILING_STOP,
 )
 
-# SimulatedExchange OrderStatus -> DTP OrderState (kept as-is; see #59).
+# SimulatedExchange OrderStatus -> DTP OrderState. Exhaustive over OrderStatus.
 _STATE_MAP: dict[OrderStatus, OrderState] = {
     OrderStatus.PENDING_CREATE: OrderState.PENDING_CREATE,
     OrderStatus.OPEN: OrderState.OPEN,
     OrderStatus.PARTIALLY_FILLED: OrderState.PARTIALLY_FILLED,
     OrderStatus.FILLED: OrderState.FILLED,
+    OrderStatus.PENDING_CANCEL: OrderState.PENDING_CANCEL,
     OrderStatus.CANCELLED: OrderState.CANCELED,
     OrderStatus.FAILED: OrderState.FAILED,
 }
+if set(_STATE_MAP) != set(OrderStatus):  # a new OrderStatus member must be mapped explicitly
+    raise RuntimeError(f"_STATE_MAP missing: {set(OrderStatus) - set(_STATE_MAP)}")
 
 
 @dataclass
@@ -299,12 +302,7 @@ class SimulatedConnectorCore:
         tracked = self._orders.get(client_order_id)
         if tracked is not None:
             sim_order = self._sim_exchange.get_in_flight_order(tracked.sim_order_id)
-            # see #59: PENDING_CANCEL (unmapped) falls back to OPEN
-            new_state = (
-                OrderState.FAILED
-                if sim_order is None
-                else _STATE_MAP.get(sim_order.status, OrderState.OPEN)
-            )
+            new_state = OrderState.FAILED if sim_order is None else _STATE_MAP[sim_order.status]
             return OrderUpdate(
                 trading_pair=tracked.trading_pair,
                 update_timestamp=self._sim_exchange.current_timestamp,
@@ -412,10 +410,7 @@ class SimulatedConnectorCore:
 
         sim_order = self._sim_exchange.get_in_flight_order(fill_event.order_id)
         if sim_order and sim_order.is_done:
-            state = (
-                OrderState.FILLED if sim_order.status == OrderStatus.FILLED else OrderState.CANCELED
-            )
-            self._finish(tracked, state, fill_event.timestamp)
+            self._finish(tracked, _STATE_MAP[sim_order.status], fill_event.timestamp)
 
     def _on_sim_triggered(self, triggered_event: OrderTriggeredEvent) -> None:
         """Emit OrderUpdate(CANCELED) for a conditional order that has fired.
