@@ -100,9 +100,9 @@ typecheck = "mypy market_simulator"
 type-check = "mypy market_simulator"
 security = "bandit -c pyproject.toml -r market_simulator/"
 check-conda-first = "python scripts/check_conda_first.py"
-quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck"] }
+quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck", "lint-boundaries"] }
 lint-boundaries = "lint-imports"
-check = { depends-on = ["check-conda-first", "quality", "lint-boundaries", "test"] }
+check = { depends-on = ["check-conda-first", "quality", "test"] }
 
 [tool.importlinter]
 root_package = "market_simulator"
