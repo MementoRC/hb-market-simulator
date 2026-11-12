@@ -2,6 +2,8 @@
 
 from decimal import Decimal
 
+import data_type_primitives
+
 from market_simulator.core.types import (
     InFlightOrder,
     MatchResult,
@@ -11,6 +13,18 @@ from market_simulator.core.types import (
     TradeType,
     TradingRule,
 )
+
+
+def test_price_type_is_canonical():
+    from market_simulator.core.types import PriceType
+
+    assert PriceType is data_type_primitives.PriceType
+
+
+def test_position_action_is_canonical():
+    from market_simulator.core.types import PositionAction
+
+    assert PositionAction is data_type_primitives.PositionAction
 
 
 class TestTradingRule:

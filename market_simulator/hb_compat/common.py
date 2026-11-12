@@ -1,4 +1,4 @@
-"""Re-export of the canonical OrderType/TradeType enums from hb-data-type-primitives.
+"""Re-export of canonical OrderType/TradeType/PriceType/PositionAction from hb-data-type-primitives.
 
 Isolating the external dependency import here keeps market_simulator.core.types
 (and the rest of the package outside hb_compat) free of direct imports from
@@ -14,6 +14,6 @@ a shimmed property, avoiding any need to monkeypatch or subclass the shared
 canonical Enum (Python enums with members cannot be subclassed).
 """
 
-from data_type_primitives import OrderType, TradeType
+from data_type_primitives import OrderType, PositionAction, PriceType, TradeType
 
-__all__ = ["OrderType", "TradeType"]
+__all__ = ["OrderType", "PositionAction", "PriceType", "TradeType"]

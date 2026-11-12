@@ -1,22 +1,20 @@
 """Core data types for market simulation.
 
-OrderType/TradeType are the canonical enums from hb-data-type-primitives,
-re-exported via the hb_compat layer (see hb_compat/common.py — ADR 0001
-Group D). The remaining types here (PriceType, OrderStatus, TradingRule,
-TradeFee, InFlightOrder) are standalone — no hummingbot imports — and are
-NOT yet migrated to hb-data-type-primitives; see hb-market-simulator issue
-#36 for the deferred-scope rationale. The hb_compat layer maps these to/from
-hummingbot's own types (OrderType, TradeType, PriceType, etc.) at the
-connector boundary.
+OrderType, TradeType, PriceType and PositionAction are the canonical enums
+from hb-data-type-primitives, re-exported via the hb_compat layer (see
+hb_compat/common.py — ADR 0001 Group D). OrderStatus, TradingRule, TradeFee
+and InFlightOrder are deliberately simulator-specific: they have no DTP
+equivalent, or a different shape (DTP's OrderState and TradeFeeBase hierarchy
+differ); see hb-market-simulator issue #58 for the rationale.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from enum import Enum, IntEnum, auto
+from enum import Enum, auto
 
-from market_simulator.hb_compat.common import OrderType, TradeType
+from market_simulator.hb_compat.common import OrderType, PositionAction, PriceType, TradeType
 
 __all__ = [
     "InFlightOrder",
@@ -35,13 +33,6 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 
-class PriceType(IntEnum):
-    MidPrice = 1
-    BestBid = 2
-    BestAsk = 3
-    LastTrade = 4
-
-
 class OrderStatus(Enum):
     PENDING_CREATE = auto()
     OPEN = auto()
@@ -50,12 +41,6 @@ class OrderStatus(Enum):
     PENDING_CANCEL = auto()
     CANCELLED = auto()
     FAILED = auto()
-
-
-class PositionAction(Enum):
-    OPEN = "OPEN"
-    CLOSE = "CLOSE"
-    NIL = "NIL"
 
 
 # ---------------------------------------------------------------------------

@@ -13,7 +13,10 @@ from enum import IntEnum
 class MarketEvent(IntEnum):
     """Events emitted by the simulated exchange.
 
-    Values match hummingbot's MarketEvent enum for compatibility.
+    Values are simulator-internal and NOT numerically compatible with
+    hummingbot.core.event.events.MarketEvent. Bridging to hummingbot goes
+    through SimulatedConnector's OrderUpdate/TradeUpdate; see
+    hb-market-simulator issue #58.
     """
 
     BuyOrderCreated = 2
