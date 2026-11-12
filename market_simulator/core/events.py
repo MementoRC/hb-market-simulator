@@ -1,31 +1,29 @@
-"""Market event types for market simulation.
+"""Event tags for market simulation.
 
-MarketEvent tags used by SimulatedExchange's event dispatch. The event bus
-implementation itself now lives in market_simulator.hb_compat.event_bus_adapter,
-which delegates to the canonical event_bus package.
+``MarketEvent`` is the canonical enum from hb-event-bus (v0.3.0+), re-exported
+here with the parent hummingbot values (e.g. BuyOrderCreated=200,
+OrderFilled=107); see hb-market-simulator issue #61. The event bus
+implementation lives in market_simulator.hb_compat.event_bus_adapter, which
+delegates to the canonical event_bus package.
+
+``SimulatorEvent`` holds simulator-only tags that have no canonical
+counterpart.
 """
 
 from __future__ import annotations
 
-from enum import IntEnum
+from enum import Enum
+
+from event_bus import MarketEvent
+
+__all__ = ["MarketEvent", "SimulatorEvent"]
 
 
-class MarketEvent(IntEnum):
-    """Events emitted by the simulated exchange.
+class SimulatorEvent(Enum):
+    """Simulator-only event tags, absent from the canonical MarketEvent.
 
-    Values are simulator-internal and NOT numerically compatible with
-    hummingbot.core.event.events.MarketEvent. Bridging to hummingbot goes
-    through SimulatedConnector's OrderUpdate/TradeUpdate; see
-    hb-market-simulator issue #58.
+    900 is outside every canonical MarketEvent value (101-110, 198-203,
+    300-303) and adjacent to, but distinct from, OrderBookEvent (901, 904).
     """
 
-    BuyOrderCreated = 2
-    SellOrderCreated = 3
-    OrderFilled = 4
-    BuyOrderCompleted = 5
-    SellOrderCompleted = 6
-    OrderCancelled = 7
-    OrderFailure = 8
-    OrderExpired = 9
-    FundingPaymentCompleted = 10
-    OrderTriggered = 11
+    OrderTriggered = 900

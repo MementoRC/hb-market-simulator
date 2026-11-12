@@ -11,9 +11,10 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
+from enum import Enum
 from typing import Any
 
-from market_simulator.core.events import MarketEvent
+from market_simulator.core.events import MarketEvent, SimulatorEvent
 from market_simulator.core.types import (
     InFlightOrder,
     OrderStatus,
@@ -264,13 +265,13 @@ class SimulatedExchange:
     # Event delegation
     # -------------------------------------------------------------------
 
-    def add_listener(self, event_tag: int, listener: Callable) -> None:
+    def add_listener(self, event_tag: Enum | int, listener: Callable) -> None:
         self._event_bus.add_listener(event_tag, listener)
 
-    def remove_listener(self, event_tag: int, listener: Callable) -> None:
+    def remove_listener(self, event_tag: Enum | int, listener: Callable) -> None:
         self._event_bus.remove_listener(event_tag, listener)
 
-    def trigger_event(self, event_tag: int, message: Any) -> None:
+    def trigger_event(self, event_tag: Enum | int, message: Any) -> None:
         self._event_bus.trigger_event(event_tag, message)
 
     # -------------------------------------------------------------------
@@ -562,7 +563,7 @@ class SimulatedExchange:
 
         # Step 2: Emit OrderTriggered event.
         self._event_bus.trigger_event(
-            MarketEvent.OrderTriggered,
+            SimulatorEvent.OrderTriggered,
             OrderTriggeredEvent(
                 timestamp=timestamp,
                 original_order_id=original_order_id,

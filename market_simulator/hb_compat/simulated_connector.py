@@ -31,6 +31,7 @@ from hummingbot.core.data_type.user_stream_tracker_data_source import UserStream
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from market_simulator.core.events import MarketEvent as SimMarketEvent
+from market_simulator.core.events import SimulatorEvent
 from market_simulator.core.types import (
     OrderType as SimOrderType,
 )
@@ -180,7 +181,7 @@ class SimulatedConnector(ExchangePyBase):
         # Wire up sim exchange fill events to feed ClientOrderTracker
         self._sim_exchange.add_listener(SimMarketEvent.OrderFilled, self._on_sim_fill)
         # Wire up conditional order trigger events
-        self._sim_exchange.add_listener(SimMarketEvent.OrderTriggered, self._on_sim_triggered)
+        self._sim_exchange.add_listener(SimulatorEvent.OrderTriggered, self._on_sim_triggered)
 
         # ExchangePyBase.__init__(balance_asset_limit, rate_limits_share_pct)
         # calls abstract properties immediately, so they must be ready above
