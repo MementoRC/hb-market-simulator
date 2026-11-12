@@ -113,8 +113,6 @@ name = "market_simulator never imports hummingbot (ADR 0001)"
 type = "forbidden"
 source_modules = ["market_simulator"]
 forbidden_modules = ["hummingbot"]
-# Known violation, remove when fixed: https://github.com/MementoRC/hb-market-simulator/issues/62
-ignore_imports = ["market_simulator.hb_compat.simulated_connector -> hummingbot"]
 
 [tool.ruff]
 target-version = "py312"
