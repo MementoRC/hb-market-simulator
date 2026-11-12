@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
 from data_type_primitives import (
     AddedToCostTradeFee,
     OrderState,
@@ -127,15 +128,33 @@ class TestOrderPlacement:
         assert await core.cancel_order("cid-1", "BTC-USDT") is True
         assert (await core.request_order_status("cid-1")).new_state == OrderState.CANCELED
 
-    async def test_cancel_order_by_sim_order_id(self):
+    async def test_cancel_order_does_not_accept_sim_order_id(self):
         core = _make_core()
         sim_order_id = core.sim_exchange.buy(
             "BTC-USDT", Decimal("0.1"), OrderType.LIMIT, Decimal("49000")
         )
-        assert await core.cancel_order(sim_order_id, "BTC-USDT") is True
-        assert core.sim_exchange.get_in_flight_order(sim_order_id) is None or (
-            not core.sim_exchange.get_in_flight_order(sim_order_id).is_open
+        assert await core.cancel_order(sim_order_id, "BTC-USDT") is False
+        assert core.sim_exchange.get_in_flight_order(sim_order_id).is_open
+
+    async def test_cancel_unknown_order_returns_false(self):
+        assert await _make_core().cancel_order("nope", "BTC-USDT") is False
+
+    async def test_cancel_emits_canceled_update_and_cleans_up(self):
+        core = _make_core()
+        orders, _ = _collect(core)
+        exchange_id = await core.place_order(
+            "c-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.LIMIT, Decimal("49000")
         )
+
+        assert await core.cancel_order("c-1", "BTC-USDT") is True
+
+        assert [(o.client_order_id, o.new_state) for o in orders] == [("c-1", OrderState.CANCELED)]
+        assert orders[0].exchange_order_id == exchange_id
+        assert core._orders == {}
+        assert core._sim_to_client == {}
+        # second cancel: order is finished
+        assert await core.cancel_order("c-1", "BTC-USDT") is False
+        assert len(orders) == 1
 
 
 class TestOrderStatus:
@@ -153,6 +172,28 @@ class TestOrderStatus:
         update = await core.request_order_status("cid-2")
         assert update.client_order_id == "cid-2"
         assert update.exchange_order_id == exchange_id
+
+    async def test_finished_order_status_is_recorded_terminal_state(self):
+        core = _make_core()
+        exchange_id = await core.place_order(
+            "done-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.MARKET, Decimal("0")
+        )
+        assert core._orders == {}
+        assert core._sim_to_client == {}
+
+        update = await core.request_order_status("done-1")
+        assert update.new_state == OrderState.FILLED
+        assert update.exchange_order_id == exchange_id
+
+    async def test_finished_history_is_bounded(self, monkeypatch):
+        monkeypatch.setattr("market_simulator.connector.core._FINISHED_HISTORY", 2)
+        core = _make_core()
+        for i in range(3):
+            await core.place_order(
+                f"b-{i}", "BTC-USDT", Decimal("0.01"), TradeType.BUY, OrderType.MARKET, Decimal("0")
+            )
+        assert list(core._finished) == ["b-1", "b-2"]
+        assert (await core.request_order_status("b-0", "BTC-USDT")).new_state == OrderState.FAILED
 
     async def test_all_trade_updates_for_order_is_empty(self):
         assert await _make_core().all_trade_updates_for_order("x") == []
@@ -227,6 +268,65 @@ class TestUpdates:
 
         assert trades == []
         assert orders == []
+
+    async def test_raising_listeners_do_not_abort_delivery(self):
+        core = _make_core()
+
+        def boom(_update):
+            raise RuntimeError("listener failure")
+
+        core.add_trade_update_listener(boom)
+        core.add_order_update_listener(boom)
+        orders, trades = _collect(core)
+
+        await core.place_order(
+            "r-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.MARKET, Decimal("0")
+        )
+
+        assert len(trades) == 1
+        assert [o.new_state for o in orders] == [OrderState.FILLED]
+        assert core.sim_exchange.get_in_flight_order("SIM-00000001").status.name == "FILLED"
+
+    async def test_insufficient_balance_delivers_failed_update(self):
+        core = _make_core(initial_balances={"USDT": Decimal("1"), "BTC": Decimal("10")})
+        orders, trades = _collect(core)
+
+        exchange_id = await core.place_order(
+            "f-1", "BTC-USDT", Decimal("1"), TradeType.BUY, OrderType.LIMIT, Decimal("49000")
+        )
+
+        assert trades == []
+        assert [(o.client_order_id, o.new_state) for o in orders] == [("f-1", OrderState.FAILED)]
+        assert orders[0].exchange_order_id == exchange_id
+        assert core._orders == {}
+        assert core._sim_to_client == {}
+        assert (await core.request_order_status("f-1")).new_state == OrderState.FAILED
+
+    async def test_place_order_exception_cleans_up(self, monkeypatch):
+        core = _make_core()
+
+        def explode(*args, **kwargs):
+            raise RuntimeError("sim down")
+
+        monkeypatch.setattr(core.sim_exchange, "buy", explode)
+        with pytest.raises(RuntimeError, match="sim down"):
+            await core.place_order(
+                "x-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.LIMIT, Decimal("49000")
+            )
+        assert core._orders == {}
+        assert core._sim_to_client == {}
+        assert core._placing is None
+
+    async def test_filled_limit_order_releases_ids(self):
+        core = _make_core()
+        await core.place_order(
+            "l-1", "BTC-USDT", Decimal("0.1"), TradeType.BUY, OrderType.LIMIT, Decimal("50100")
+        )
+        assert "l-1" in core._orders
+        core.tick(1.0)
+        assert core._orders == {}
+        assert core._sim_to_client == {}
+        assert (await core.request_order_status("l-1")).new_state == OrderState.FILLED
 
     async def test_triggered_conditional_order_emits_canceled(self):
         core = _make_core()

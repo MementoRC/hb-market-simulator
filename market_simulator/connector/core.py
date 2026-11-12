@@ -10,6 +10,7 @@ registers listeners and feeds the updates into its own order tracker.
 from __future__ import annotations
 
 import logging
+from collections import OrderedDict
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -28,6 +29,8 @@ from market_simulator.core.events import MarketEvent, SimulatorEvent
 from market_simulator.core.types import OrderStatus, TradingRule
 from market_simulator.protocols.venue import OrderUpdateListener, TradeUpdateListener
 from market_simulator.simulator.exchange import (
+    OrderCancelledEvent,
+    OrderFailureEvent,
     OrderFilledEvent,
     OrderTriggeredEvent,
     SimulatedExchange,
@@ -37,6 +40,8 @@ from market_simulator.simulator.fee_model import FeeModel, FlatFeeModel, ZeroFee
 from market_simulator.simulator.matching_engine import LimitOrderEngine, MatchingEngine
 
 logger = logging.getLogger(__name__)
+
+_FINISHED_HISTORY = 1024
 
 _SUPPORTED_ORDER_TYPES: tuple[OrderType, ...] = (
     OrderType.MARKET,
@@ -89,6 +94,8 @@ class SimulatedConnectorCore:
         self._orders: dict[str, _TrackedOrder] = {}
         self._sim_to_client: dict[str, str] = {}
         self._placing: _TrackedOrder | None = None
+        # Bounded history of terminal updates, for request_order_status on finished orders
+        self._finished: OrderedDict[str, OrderUpdate] = OrderedDict()
 
         self._order_listeners: list[OrderUpdateListener] = []
         self._trade_listeners: list[TradeUpdateListener] = []
@@ -101,6 +108,8 @@ class SimulatedConnectorCore:
 
         self._sim_exchange.add_listener(MarketEvent.OrderFilled, self._on_sim_fill)
         self._sim_exchange.add_listener(SimulatorEvent.OrderTriggered, self._on_sim_triggered)
+        self._sim_exchange.add_listener(MarketEvent.OrderCancelled, self._on_sim_cancelled)
+        self._sim_exchange.add_listener(MarketEvent.OrderFailure, self._on_sim_failed)
 
     # -------------------------------------------------------------------
     # Identity
@@ -234,11 +243,19 @@ class SimulatedConnectorCore:
                 trigger_price=trigger_price,
                 trail_amount=trail_amount,
             )
+        except Exception:
+            self._orders.pop(client_order_id, None)
+            if tracked.sim_order_id:
+                self._sim_to_client.pop(tracked.sim_order_id, None)
+            raise
         finally:
             self._placing = None
 
-        tracked.sim_order_id = sim_order_id
-        self._sim_to_client[sim_order_id] = client_order_id
+        # An order that already finished during placement (instant fill/failure) has been
+        # released by _finish; only live orders keep their id mapping.
+        if client_order_id in self._orders:
+            tracked.sim_order_id = sim_order_id
+            self._sim_to_client[sim_order_id] = client_order_id
         return exchange_order_id
 
     def _resolve(self, sim_order_id: str) -> _TrackedOrder | None:
@@ -254,34 +271,58 @@ class SimulatedConnectorCore:
         return None
 
     async def cancel_order(self, client_order_id: str, trading_pair: str) -> bool:
-        """Cancel an order on the simulated exchange."""
+        """Cancel an open order placed through place_order.
+
+        Returns False for unknown ids and for orders that are already finished. On
+        success the simulator's OrderCancelled event delivers OrderUpdate(CANCELED).
+        """
         tracked = self._orders.get(client_order_id)
-        sim_order_id = tracked.sim_order_id if tracked else client_order_id
-        self._sim_exchange.cancel(trading_pair, sim_order_id)
+        if tracked is None:
+            return False
+        sim_order = self._sim_exchange.get_in_flight_order(tracked.sim_order_id)
+        if sim_order is None or not sim_order.is_open:
+            return False
+        self._sim_exchange.cancel(tracked.trading_pair, tracked.sim_order_id)
         return True
 
     async def request_order_status(
         self, client_order_id: str, trading_pair: str = ""
     ) -> OrderUpdate:
-        """Report the simulated exchange's current state for an order."""
-        tracked = self._orders.get(client_order_id)
-        sim_order_id = tracked.sim_order_id if tracked else client_order_id
-        pair = tracked.trading_pair if tracked else trading_pair
-        exchange_order_id = tracked.exchange_order_id if tracked else None
+        """Report the current state of an order.
 
-        sim_order = self._sim_exchange.get_in_flight_order(sim_order_id)
-        if sim_order is None:
-            new_state = OrderState.FAILED
-        else:
+        - Live order: the simulator's current state.
+        - Finished order (FILLED/CANCELED/FAILED): its recorded terminal update, kept in
+          a bounded history of the last ``_FINISHED_HISTORY`` orders.
+        - Unknown order (never placed here, or evicted from the history): FAILED,
+          carrying the given ``trading_pair`` and no exchange order id.
+        """
+        tracked = self._orders.get(client_order_id)
+        if tracked is not None:
+            sim_order = self._sim_exchange.get_in_flight_order(tracked.sim_order_id)
             # see #59: PENDING_CANCEL (unmapped) falls back to OPEN
-            new_state = _STATE_MAP.get(sim_order.status, OrderState.OPEN)
+            new_state = (
+                OrderState.FAILED
+                if sim_order is None
+                else _STATE_MAP.get(sim_order.status, OrderState.OPEN)
+            )
+            return OrderUpdate(
+                trading_pair=tracked.trading_pair,
+                update_timestamp=self._sim_exchange.current_timestamp,
+                new_state=new_state,
+                client_order_id=client_order_id,
+                exchange_order_id=tracked.exchange_order_id,
+            )
+
+        finished = self._finished.get(client_order_id)
+        if finished is not None:
+            return finished
 
         return OrderUpdate(
-            trading_pair=pair,
+            trading_pair=trading_pair,
             update_timestamp=self._sim_exchange.current_timestamp,
-            new_state=new_state,
+            new_state=OrderState.FAILED,
             client_order_id=client_order_id,
-            exchange_order_id=exchange_order_id,
+            exchange_order_id=None,
         )
 
     async def all_trade_updates_for_order(self, client_order_id: str) -> list[TradeUpdate]:
@@ -299,11 +340,33 @@ class SimulatedConnectorCore:
 
     def _emit_order_update(self, update: OrderUpdate) -> None:
         for listener in list(self._order_listeners):
-            listener(update)
+            try:
+                listener(update)
+            except Exception:
+                logger.exception("Order update listener failed for %s", update.client_order_id)
 
     def _emit_trade_update(self, update: TradeUpdate) -> None:
         for listener in list(self._trade_listeners):
-            listener(update)
+            try:
+                listener(update)
+            except Exception:
+                logger.exception("Trade update listener failed for %s", update.client_order_id)
+
+    def _finish(self, tracked: _TrackedOrder, state: OrderState, timestamp: float) -> None:
+        """Record a terminal state, release the id bookkeeping, then notify listeners."""
+        update = OrderUpdate(
+            trading_pair=tracked.trading_pair,
+            update_timestamp=timestamp,
+            new_state=state,
+            client_order_id=tracked.client_order_id,
+            exchange_order_id=tracked.exchange_order_id,
+        )
+        self._orders.pop(tracked.client_order_id, None)
+        self._sim_to_client.pop(tracked.sim_order_id, None)
+        self._finished[tracked.client_order_id] = update
+        while len(self._finished) > _FINISHED_HISTORY:
+            self._finished.popitem(last=False)
+        self._emit_order_update(update)
 
     # -------------------------------------------------------------------
     # Simulation tick
@@ -352,15 +415,7 @@ class SimulatedConnectorCore:
             state = (
                 OrderState.FILLED if sim_order.status == OrderStatus.FILLED else OrderState.CANCELED
             )
-            self._emit_order_update(
-                OrderUpdate(
-                    trading_pair=fill_event.trading_pair,
-                    update_timestamp=fill_event.timestamp,
-                    new_state=state,
-                    client_order_id=tracked.client_order_id,
-                    exchange_order_id=tracked.exchange_order_id,
-                )
-            )
+            self._finish(tracked, state, fill_event.timestamp)
 
     def _on_sim_triggered(self, triggered_event: OrderTriggeredEvent) -> None:
         """Emit OrderUpdate(CANCELED) for a conditional order that has fired.
@@ -372,12 +427,16 @@ class SimulatedConnectorCore:
         if tracked is None:
             return
 
-        self._emit_order_update(
-            OrderUpdate(
-                trading_pair=triggered_event.trading_pair,
-                update_timestamp=triggered_event.timestamp,
-                new_state=OrderState.CANCELED,
-                client_order_id=tracked.client_order_id,
-                exchange_order_id=tracked.exchange_order_id,
-            )
-        )
+        self._finish(tracked, OrderState.CANCELED, triggered_event.timestamp)
+
+    def _on_sim_cancelled(self, cancelled_event: OrderCancelledEvent) -> None:
+        """Emit OrderUpdate(CANCELED) for a cancelled tracked order."""
+        tracked = self._resolve(cancelled_event.order_id)
+        if tracked is not None:
+            self._finish(tracked, OrderState.CANCELED, cancelled_event.timestamp)
+
+    def _on_sim_failed(self, failure_event: OrderFailureEvent) -> None:
+        """Emit OrderUpdate(FAILED) for a tracked order the simulator rejected."""
+        tracked = self._resolve(failure_event.order_id)
+        if tracked is not None:
+            self._finish(tracked, OrderState.FAILED, failure_event.timestamp)
