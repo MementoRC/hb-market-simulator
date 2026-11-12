@@ -50,11 +50,13 @@ pytest-xdist = "*"
 pytest-timeout = "*"
 ruff = "=0.17.2"
 mypy = "*"
+import-linter = ">=2.0"
 pre-commit = ">=2.15.0"
 
 [tool.pixi.feature.ci.dependencies]
 ruff = "=0.17.2"
 mypy = ">=1.5.1"
+import-linter = ">=2.0"
 pytest = ">=7.0.0"
 pytest-cov = ">=4.1.0"
 bandit = ">=1.8.0"
@@ -98,8 +100,21 @@ typecheck = "mypy market_simulator"
 type-check = "mypy market_simulator"
 security = "bandit -c pyproject.toml -r market_simulator/"
 check-conda-first = "python scripts/check_conda_first.py"
-quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck"] }
+quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck", "lint-boundaries"] }
+lint-boundaries = "lint-imports"
 check = { depends-on = ["check-conda-first", "quality", "test"] }
+
+[tool.importlinter]
+root_package = "market_simulator"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "market_simulator never imports hummingbot (ADR 0001)"
+type = "forbidden"
+source_modules = ["market_simulator"]
+forbidden_modules = ["hummingbot"]
+# Known violation, remove when fixed: https://github.com/MementoRC/hb-market-simulator/issues/62
+ignore_imports = ["market_simulator.hb_compat.simulated_connector -> hummingbot"]
 
 [tool.ruff]
 target-version = "py312"
