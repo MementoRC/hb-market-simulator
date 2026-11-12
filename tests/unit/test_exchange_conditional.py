@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from market_simulator.core.events import MarketEvent
+from market_simulator.core.events import MarketEvent, SimulatorEvent
 from market_simulator.core.types import OrderStatus, OrderType, TradeType
 from market_simulator.simulator.exchange import (
     OrderCancelledEvent,
@@ -88,7 +88,7 @@ def _register_all_conditional_events(ex: SimulatedExchange) -> EventCollector:
     """Register a single EventCollector for all conditional + fill events."""
     collector = EventCollector()
     for tag in (
-        MarketEvent.OrderTriggered,
+        SimulatorEvent.OrderTriggered,
         MarketEvent.OrderFilled,
         MarketEvent.BuyOrderCompleted,
         MarketEvent.SellOrderCompleted,
@@ -322,7 +322,7 @@ class TestConditionalOrderManagement:
         """OrderTriggeredEvent carries original_order_id, pair, type, and trade_type."""
         ex = _make_exchange()
         triggered_collector = EventCollector()
-        ex.add_listener(MarketEvent.OrderTriggered, triggered_collector)
+        ex.add_listener(SimulatorEvent.OrderTriggered, triggered_collector)
 
         order_id = ex.buy(
             "BTC-USDT",
@@ -401,7 +401,7 @@ class TestNullTriggerEngine:
         ex = _make_exchange(trigger_engine=NullTriggerEngine())
         triggered_collector = EventCollector()
         fill_collector = EventCollector()
-        ex.add_listener(MarketEvent.OrderTriggered, triggered_collector)
+        ex.add_listener(SimulatorEvent.OrderTriggered, triggered_collector)
         ex.add_listener(MarketEvent.OrderFilled, fill_collector)
 
         # Trigger at 50100, ask is already 50100 → would fire with StandardTriggerEngine

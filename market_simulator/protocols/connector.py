@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from decimal import Decimal
+from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
 from market_simulator.core.types import (
@@ -85,11 +86,11 @@ class OrderExecutionProtocol(Protocol):
 class EventSourceProtocol(Protocol):
     """Event subscription and emission."""
 
-    def add_listener(self, event_tag: int, listener: Callable) -> None: ...
+    def add_listener(self, event_tag: Enum | int, listener: Callable) -> None: ...
 
-    def remove_listener(self, event_tag: int, listener: Callable) -> None: ...
+    def remove_listener(self, event_tag: Enum | int, listener: Callable) -> None: ...
 
-    def trigger_event(self, event_tag: int, message: Any) -> None: ...
+    def trigger_event(self, event_tag: Enum | int, message: Any) -> None: ...
 
 
 @runtime_checkable

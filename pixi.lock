@@ -181,7 +181,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-21.15.6-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
   default:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -348,7 +348,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-21.15.6-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
   py312:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -515,7 +515,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/virtualenv-21.15.6-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
   quality-ci:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -589,7 +589,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.2-pyh5ded981_0.conda
       - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
   quality-extended:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
@@ -700,7 +700,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/webencodings-0.6.1-pyh5ded981_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/wheel-0.48.0-pyhd8ed1ab_0.conda
       - pypi: git+https://github.com/MementoRC/hb-data-type-primitives.git?rev=v0.1.0#36fb55b9895caecf0d2a4be2160dab1bf080893f
-      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+      - pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -3660,7 +3660,7 @@ packages:
   - pytest>=9.0.3 ; extra == 'dev'
   - ruff>=0.15.10 ; extra == 'dev'
   requires_python: '>=3.12'
-- pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.2.0#efa7a314829933233c19ab32f5daf25ca165c6c3
+- pypi: git+https://github.com/MementoRC/hb-event-bus.git?rev=v0.3.0#4749998b53d223a9a861ff5ce096170149a3c2af
   name: hb-event-bus
-  version: 0.2.0
+  version: 0.3.0
   requires_python: '>=3.12'
