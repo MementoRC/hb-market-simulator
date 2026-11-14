@@ -97,10 +97,7 @@ check-conda-first = "python scripts/check_conda_first.py"
 quality = { depends-on = ["check-conda-first", "lint", "format-check", "typecheck", "lint-boundaries", "bandit-security"] }
 lint-boundaries = "lint-imports"
 bandit-security = "bandit -c pyproject.toml -r market_simulator --severity-level medium --confidence-level medium"
-# TODO(remove when conda-forge dnspython>=2.9.2): CVE-2026-128089
-# dnspython is transitive dev/CI-only (via import-linter -> fastapi -> email-validator), not a
-# runtime dep of market_simulator; no fixed build on conda-forge yet.
-safety-check = "pip-audit --skip-editable --ignore-vuln CVE-2026-128089"
+safety-check = "pip-audit --skip-editable"
 check = { depends-on = ["check-conda-first", "quality", "test"] }
 
 [tool.importlinter]
